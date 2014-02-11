@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://larmog.github.io/sitemap.xml 
