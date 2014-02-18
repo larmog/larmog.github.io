@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>larmog blog</title>
+  <title>Simple Groovy AOP Using MOP - larmog blog</title>
   <meta name="author" content="Lars Mogren">
 
   
@@ -19,7 +19,7 @@ classes. The most obvious solution was to implement &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://larmog.github.io">
+  <link rel="canonical" href="http://larmog.github.io/blog/2014/02/18/simple-groovy-aop-using-mop">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="larmog blog" type="application/atom+xml">
@@ -64,15 +64,12 @@ classes. The most obvious solution was to implement &hellip;">
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/02/18/simple-groovy-aop-using-mop/">Simple Groovy AOP Using MOP</a></h1>
+      <h1 class="entry-title">Simple Groovy AOP Using MOP</h1>
     
     
       <p class="meta">
@@ -95,7 +92,7 @@ classes. The most obvious solution was to implement &hellip;">
   </header>
 
 
-  <div class="entry-content"><p>I was looking for a simple solution for adding cross cutting concernes to Groovy
+<div class="entry-content"><p>I was looking for a simple solution for adding cross cutting concernes to Groovy
 classes. The most obvious solution was to implement <code>GroovyInterceptable</code> but I wanted a
 less intrusive solution. After a bit of googling I&rsquo;ve stumbled across
 <code>DelegatingMetaClass</code>.</p>
@@ -190,18 +187,51 @@ after: Person.dance, return value:null &lt;--
 
 <p> As we can see in the example above the <code>println</code>-method is part of the Groovy object.</p>
 </div>
+
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Lars Mogren</span></span>
+
+      
+
+
+
+
+
+
+
+
   
 
 
-    </article>
+<time datetime="2014-02-18T10:23:00+01:00" pubdate data-updated="true">Feb 18<span>th</span>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
   
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://larmog.github.io/blog/2014/02/18/simple-groovy-aop-using-mop/" data-via="larmog" data-counturl="http://larmog.github.io/blog/2014/02/18/simple-groovy-aop-using-mop/" >Tweet</a>
+  
+  
+  
 </div>
+
+    
+    <p class="meta">
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
@@ -221,6 +251,7 @@ after: Person.dance, return value:null &lt;--
 
   
 </aside>
+
 
     </div>
   </div>
