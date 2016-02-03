@@ -1,0 +1,23 @@
+baseurl = "http://larmog.github.io/"
+languageCode = "en-us"
+title = "kodbasen"
+MetaDataFormat = "toml"
+paginate = 3 # To specify a multiple of 3
+disqusShortname = "larmog" # optional
+copyright = "Copyright © 2015 by larmog"
+
+[params]
+  description = "Where the compass is spinning around software" # optional
+  twitter = "@larmog" # optional
+  github = "larmog" # optional
+  linkedin = "larmog" # optional
+  headerCover = "images/kodbasenCover.png" # optional
+  footerCover = "images/kodbasenCover.png" # optional
+
+[permalinks]
+  post = "/:year/:month/:day/:title/" # optional
+
+[taxonomies]
+  tag = "tags"
+  category = "categories"
+  series = "series"
