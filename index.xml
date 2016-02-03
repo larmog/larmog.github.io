@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>kodbasen</title>
+    <link>http://larmog.github.io/</link>
+    <description>Recent content on kodbasen</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Copyright © 2015 by larmog</copyright>
+    <lastBuildDate>Mon, 18 Aug 2014 21:37:45 +0100</lastBuildDate>
+    <atom:link href="http://larmog.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Simple Groovy AOP using MOP</title>
+      <link>http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/</link>
+      <pubDate>Mon, 18 Aug 2014 21:37:45 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/</guid>
+      <description>&lt;p&gt;I was looking for a simple solution for adding cross cutting concerns to Groovy
+classes. The most obvious solution was to implement &lt;code&gt;GroovyInterceptable&lt;/code&gt; but I wanted a
+less intrusive solution. After a bit of googling I&amp;rsquo;ve stumbled across
+&lt;code&gt;DelegatingMetaClass&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Here is a simple interceptor that works like a around advice. It only logs all method
+calls for a class.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;
+class Interceptor extends DelegatingMetaClass {
+  	Interceptor(final Class cls) {
+      	super(cls)
+      	initialize()
+  	}
+
+  	public Object invokeMethod(Object obj, String method, Object[] args) {
+      	String cls = obj.class.simpleName
+      	println &amp;quot;before: $cls.$method, args:$args --&amp;gt;&amp;quot;
+      	def val = null
+      	try {
+          	val = super.invokeMethod(obj, method, args)
+      	} catch(Exception e) {
+          	println &amp;quot;after: $cls.$method, has thrown:$e &amp;lt;--&amp;quot;
+          	throw e
+      	}
+      	println &amp;quot;after: $cls.$method, return value:$val &amp;lt;--&amp;quot;
+      	return val;
+  	}
+
+  	def static injectIn(Class cls) {
+      	cls.metaClass = new Interceptor(cls)
+  	}
+}
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now use the &lt;code&gt;Interceptor&lt;/code&gt; to trace calls to &lt;code&gt;ArrayList&lt;/code&gt; like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	Interceptor.InjectIn(ArrayList)
+
+	def list = []
+	list &amp;lt;&amp;lt; &amp;quot;Joe&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If we run the above it will produce:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;	before: ArrayList.leftShift, args:[Joe] --&amp;gt;
+	after: ArrayList.leftShift, return value:[Joe] &amp;lt;--
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;It works width mixin&amp;rsquo;s too, for example:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	class Person {
+		def name
+
+		def sayHello() { println &amp;quot;Hi, my name is $name!&amp;quot;}
+	}
+
+	class Dancer {
+		def dance() { println &amp;quot;I can dance&amp;quot; }
+	}
+
+	class Singer {
+		def sing() { println &amp;quot;I can sing&amp;quot; }
+	}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now create a person who dance and sing. The &lt;code&gt;Interceptor&lt;/code&gt; must be injected
+after the mixin:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	Person.mixin Singer
+	Person.mixin Dancer
+	Interceptor.injectIn(Person)
+
+	def p = new Person(name: &amp;quot;Jill&amp;quot;)
+	p.sayHello()
+	p.sing()
+	p.dance()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This will produce the following output:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;	before: Person.sayHello, args:[] --&amp;gt;
+	before: Person.println, args:[Hi, my name is Jill!] --&amp;gt;
+	Hi, my name is Jill!
+	after: Person.println, return value:null &amp;lt;--
+	after: Person.sayHello, return value:null &amp;lt;--
+	before: Person.sing, args:[] --&amp;gt;
+	I can sing
+	after: Person.sing, return value:null &amp;lt;--
+	before: Person.dance, args:[] --&amp;gt;
+	I can dance
+	after: Person.dance, return value:null &amp;lt;--
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As we can see in the example above the &lt;code&gt;println&lt;/code&gt;-method is part of the Groovy object.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

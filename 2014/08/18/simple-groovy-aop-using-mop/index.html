@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Simple Groovy AOP using MOP</title>
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.png);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/@larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.png">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Simple Groovy AOP using MOP</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+           
+          </p>
+          <p><p>I was looking for a simple solution for adding cross cutting concerns to Groovy
+classes. The most obvious solution was to implement <code>GroovyInterceptable</code> but I wanted a
+less intrusive solution. After a bit of googling I&rsquo;ve stumbled across
+<code>DelegatingMetaClass</code>.</p>
+
+<p>Here is a simple interceptor that works like a around advice. It only logs all method
+calls for a class.</p>
+
+<pre><code class="language-java">
+class Interceptor extends DelegatingMetaClass {
+  	Interceptor(final Class cls) {
+      	super(cls)
+      	initialize()
+  	}
+
+  	public Object invokeMethod(Object obj, String method, Object[] args) {
+      	String cls = obj.class.simpleName
+      	println &quot;before: $cls.$method, args:$args --&gt;&quot;
+      	def val = null
+      	try {
+          	val = super.invokeMethod(obj, method, args)
+      	} catch(Exception e) {
+          	println &quot;after: $cls.$method, has thrown:$e &lt;--&quot;
+          	throw e
+      	}
+      	println &quot;after: $cls.$method, return value:$val &lt;--&quot;
+      	return val;
+  	}
+
+  	def static injectIn(Class cls) {
+      	cls.metaClass = new Interceptor(cls)
+  	}
+}
+
+</code></pre>
+
+<p>We can now use the <code>Interceptor</code> to trace calls to <code>ArrayList</code> like this:</p>
+
+<pre><code class="language-java">	Interceptor.InjectIn(ArrayList)
+
+	def list = []
+	list &lt;&lt; &quot;Joe&quot;
+</code></pre>
+
+<p>If we run the above it will produce:</p>
+
+<pre><code class="language-shell">	before: ArrayList.leftShift, args:[Joe] --&gt;
+	after: ArrayList.leftShift, return value:[Joe] &lt;--
+</code></pre>
+
+<p>It works width mixin&rsquo;s too, for example:</p>
+
+<pre><code class="language-java">	class Person {
+		def name
+
+		def sayHello() { println &quot;Hi, my name is $name!&quot;}
+	}
+
+	class Dancer {
+		def dance() { println &quot;I can dance&quot; }
+	}
+
+	class Singer {
+		def sing() { println &quot;I can sing&quot; }
+	}
+</code></pre>
+
+<p>We can now create a person who dance and sing. The <code>Interceptor</code> must be injected
+after the mixin:</p>
+
+<pre><code class="language-java">	Person.mixin Singer
+	Person.mixin Dancer
+	Interceptor.injectIn(Person)
+
+	def p = new Person(name: &quot;Jill&quot;)
+	p.sayHello()
+	p.sing()
+	p.dance()
+</code></pre>
+
+<p>This will produce the following output:</p>
+
+<pre><code class="language-shell">	before: Person.sayHello, args:[] --&gt;
+	before: Person.println, args:[Hi, my name is Jill!] --&gt;
+	Hi, my name is Jill!
+	after: Person.println, return value:null &lt;--
+	after: Person.sayHello, return value:null &lt;--
+	before: Person.sing, args:[] --&gt;
+	I can sing
+	after: Person.sing, return value:null &lt;--
+	before: Person.dance, args:[] --&gt;
+	I can dance
+	after: Person.dance, return value:null &lt;--
+</code></pre>
+
+<p>As we can see in the example above the <code>println</code>-method is part of the Groovy object.</p>
+</p>
+          <p>18 Aug 2014
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/groovy/">#Groovy</a>
+              
+            
+          </p>
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2015 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+
+  </body>
+</html>
+
