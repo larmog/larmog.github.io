@@ -1,6 +1,6 @@
 +++
 date = "2014-08-18T21:37:45+01:00"
-draft = true
+draft = false
 title = "Simple Groovy AOP using MOP"
 author = "Lars Mogren"
 tags = [ "Development", "Groovy" ]
@@ -12,6 +12,8 @@ I was looking for a simple solution for adding cross cutting concerns to Groovy
 classes. The most obvious solution was to implement `GroovyInterceptable` but I wanted a
 less intrusive solution. After a bit of googling I've stumbled across
 `DelegatingMetaClass`.
+
+<!--more-->
 
 Here is a simple interceptor that works like a around advice. It only logs all method
 calls for a class.
