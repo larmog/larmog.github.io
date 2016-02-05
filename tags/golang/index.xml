@@ -18,8 +18,9 @@
       <guid>http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/</guid>
       <description>&lt;p&gt;I&amp;rsquo;ve been a dedicated Java developer since 1998 and it&amp;rsquo;s been a great tool.
 But recently there&amp;rsquo;s a couple of things I&amp;rsquo;ve been fretting about. I always been
-a slow using keyboard (never learnt how use it correctly). When programming
-that&amp;rsquo;s not always a bad thing.
+slow using keyboard (never learnt how to use it correctly). When programming
+that&amp;rsquo;s not always a bad thing, it gives you time to think about what you&amp;rsquo;re
+writing.
 But Java is very verbose and all those &lt;code&gt;private&lt;/code&gt;, &lt;code&gt;pubic&lt;/code&gt;, &lt;code&gt;;&lt;/code&gt;, &lt;code&gt;getXXX&lt;/code&gt;,
 &lt;code&gt;setXXX&lt;/code&gt; kind of gets in the way.&lt;/p&gt;
 
