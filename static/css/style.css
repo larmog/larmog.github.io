@@ -54,3 +54,10 @@ footer.page-footer {
   background: #3f4549;
   color: #63CC63;
 }
+
+.btn { margin-top: 5px; }
+.btn.twitter     { background: #55acee;}
+.btn.google-plus { background: #dd4b39;}
+.btn.facebook    { background: #3B5998;}
+.btn.linkedin    { background: #4875B4;}
+.btn.email       { background: #444444;}

@@ -1,0 +1,38 @@
+<div>
+<!-- Social Button HTML -->
+
+<!-- Twitter -->
+<a href="http://twitter.com/share?url={{ .Permalink }}&text={{ .Title }}&via={{ .Site.Params.twitter}}" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+<!-- Google Plus -->
+<a href="https://plus.google.com/share?url={{ .Permalink }}" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+<!-- Facebook -->
+<a href="http://www.facebook.com/sharer/sharer.php?u={{ .Permalink }}" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+<!-- StumbleUpon (url, title) -->
+<a href="http://www.stumbleupon.com/submit?url={{ .Permalink }}&title={{ .Title }}" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+<!-- Reddit (url, title) -->
+<a href="http://reddit.com/submit?url={{ .Permalink }}&title={{ .Title }}" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+<!-- LinkedIn -->
+<a href="http://www.linkedin.com/shareArticle?url={{ .Permalink }}&title={{ .Title }}&summary={{ .Summary }}&source={{ .Permalink }}" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+<!-- Email -->
+<a href="mailto:?subject={{ .Title }}&body={{ .Permalink }}" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
