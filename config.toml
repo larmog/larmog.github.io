@@ -13,6 +13,7 @@ copyright = "Copyright © 2015 by larmog"
   linkedin = "larmog" # optional
   headerCover = "images/kodbasenCover.png" # optional
   footerCover = "images/kodbasenCover.png" # optional
+  googleAnalyticsUserID = "UA-73372924-1"
 
 [permalinks]
   post = "/:year/:month/:day/:title/" # optional
