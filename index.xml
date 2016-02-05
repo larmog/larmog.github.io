@@ -63,8 +63,8 @@ one of them is out of your control.&lt;/p&gt;
 $CGO_ENABLED=0 GOOS=linux go build -ldflags &amp;quot;-s&amp;quot; -a -installsuffix cgo -o main
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;If your like me feeling young and haven&amp;rsquo;t aged a day since 1995 the truth is
-time goes by. Even if you do your best to keep young it&amp;rsquo;s hard to change. Java
+&lt;p&gt;If your like me feeling young and haven&amp;rsquo;t aged a day since 1995, the truth is
+time goes by. Even if you do your best to keep young, it&amp;rsquo;s hard to change. Java
 has done a good job: HotSpot, Regular expressions, NIO, Generics, Annotations,
 primitive wrapper classes with autoboxing, Enumerations, Varargs and Lambda
 Expressions. Just take a look at the
@@ -77,7 +77,8 @@ to start all over and make something new based on what you&amp;rsquo;ve learnt.&
 $open http://tour.golang.org/welcome/1
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;I&amp;rsquo;m keeping Java in my toolbox but I&amp;rsquo;ve started using Golang as my new tool and
+&lt;p&gt;I&amp;rsquo;m keeping Java in my toolbox but I&amp;rsquo;ve started using
+&lt;a href=&#34;https://golang.org/&#34;&gt;The Go Programming Language&lt;/a&gt; as my new tool and
 it&amp;rsquo;s great fun.&lt;/p&gt;
 </description>
     </item>
