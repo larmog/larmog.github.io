@@ -56,8 +56,8 @@ one of them is out of your control.
 $CGO_ENABLED=0 GOOS=linux go build -ldflags "-s" -a -installsuffix cgo -o main
 ```
 
-If your like me feeling young and haven't aged a day since 1995 the truth is
-time goes by. Even if you do your best to keep young it's hard to change. Java
+If your like me feeling young and haven't aged a day since 1995, the truth is
+time goes by. Even if you do your best to keep young, it's hard to change. Java
 has done a good job: HotSpot, Regular expressions, NIO, Generics, Annotations,
 primitive wrapper classes with autoboxing, Enumerations, Varargs and Lambda
 Expressions. Just take a look at the
@@ -71,5 +71,6 @@ to start all over and make something new based on what you've learnt.
 $open http://tour.golang.org/welcome/1
 ```
 
-I'm keeping Java in my toolbox but I've started using Golang as my new tool and
+I'm keeping Java in my toolbox but I've started using
+[The Go Programming Language](https://golang.org/) as my new tool and
 it's great fun.
