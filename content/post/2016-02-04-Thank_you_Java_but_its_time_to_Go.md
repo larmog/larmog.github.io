@@ -8,8 +8,8 @@ categories = [ "Development" ]
 +++
 
 I've been a dedicated Java developer since 1998 and it's been a great tool.
-But recently there's a couple of things that's been nagging me. I always been
-a slow typer (never learnt how use a keyboard correctly). When programming
+But recently there's a couple of things I've been fretting about. I always been
+a slow using keyboard (never learnt how use it correctly). When programming
 that's not always a bad thing.
 But Java is very verbose and all those `private`, `pubic`, `;`, `getXXX`,
 `setXXX` kind of gets in the way.
