@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
-  <title>Simple Groovy AOP using MOP</title>
+  <title>Thank you Java, but it&#39;s time to Go</title>
   <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
@@ -60,7 +60,7 @@
     <div class="row">
       <div class="col s12">
         <div class="card-panel">
-          <h4>Simple Groovy AOP using MOP</h4>
+          <h4>Thank you Java, but it&#39;s time to Go</h4>
           <p>
           
             
@@ -68,109 +68,78 @@
             
            
           </p>
-          <p><p>I was looking for a simple solution for adding cross cutting concerns to Groovy
-classes. The most obvious solution was to implement <code>GroovyInterceptable</code> but I wanted a
-less intrusive solution. After a bit of googling I&rsquo;ve stumbled across
-<code>DelegatingMetaClass</code>.</p>
+          <p><p>I&rsquo;ve been a dedicated Java developer since 1998 and it&rsquo;s been a great tool.
+But recently there&rsquo;s a couple of things that&rsquo;s been nagging me. I always been
+a slow typer (never learnt how use a keyboard correctly). When programming
+that&rsquo;s not always a bad thing.
+But Java is very verbose and all those <code>private</code>, <code>pubic</code>, <code>;</code>, <code>getXXX</code>,
+<code>setXXX</code> kind of gets in the way.</p>
 
-<p>Here is a simple interceptor that works like a around advice. It only logs all method
-calls for a class.</p>
+<pre><code class="language-bash">package main
 
-<pre><code class="language-java">
-class Interceptor extends DelegatingMetaClass {
-  	Interceptor(final Class cls) {
-      	super(cls)
-      	initialize()
-  	}
+import &quot;fmt&quot;
 
-  	public Object invokeMethod(Object obj, String method, Object[] args) {
-      	String cls = obj.class.simpleName
-      	println &quot;before: $cls.$method, args:$args --&gt;&quot;
-      	def val = null
-      	try {
-          	val = super.invokeMethod(obj, method, args)
-      	} catch(Exception e) {
-          	println &quot;after: $cls.$method, has thrown:$e &lt;--&quot;
-          	throw e
-      	}
-      	println &quot;after: $cls.$method, return value:$val &lt;--&quot;
-      	return val;
-  	}
-
-  	def static injectIn(Class cls) {
-      	cls.metaClass = new Interceptor(cls)
-  	}
+type Vertex struct {
+	X int
+	Y int
 }
 
+func main() {
+	v := Vertex{1, 2}
+	v.X = 4
+	fmt.Println(v.X)
+}
 </code></pre>
 
-<p>We can now use the <code>Interceptor</code> to trace calls to <code>ArrayList</code> like this:</p>
+<p>Another thing that turns out to be complicated is coding standards. It&rsquo;s all
+well when your on a greenfield project and the team can decide their own rules.
+But have you ever worked with legacy code that&rsquo;s been abused for several years
+buy developers who rather wish they were on that super cool project? I know you
+can&rsquo;t blame <code>Java</code> for this but it&rsquo;s still a problem. Coding standards are like
+fashion and every developer has an opinion on where to put the <code>{}</code> and don&rsquo;t
+mention line endings when your in a mixed Windows and *nix environment.</p>
 
-<pre><code class="language-java">	Interceptor.InjectIn(ArrayList)
-
-	def list = []
-	list &lt;&lt; &quot;Joe&quot;
+<pre><code class="language-shell"># Gofmt is a tool that automatically formats Go source code
+$go fmt
 </code></pre>
 
-<p>If we run the above it will produce:</p>
+<p>When Java was released in 1995 the promise <em>&ldquo;write once, run anywhere&rdquo;</em> sounded
+very tempting but has shown not to be altogether true. There have been, and
+will always be, bugs and small differences in the JVM which means that your
+program will always be dependent on the version of the JVM running your byte
+code. That means you have at least two artifacts to consider and
+one of them is out of your control.</p>
 
-<pre><code class="language-shell">	before: ArrayList.leftShift, args:[Joe] --&gt;
-	after: ArrayList.leftShift, return value:[Joe] &lt;--
+<pre><code class="language-shell"># Static compiled go binary that can be used in a Docker image.
+# The binary is compiled using golang Docker image.
+$CGO_ENABLED=0 GOOS=linux go build -ldflags &quot;-s&quot; -a -installsuffix cgo -o main
 </code></pre>
 
-<p>It works width mixin&rsquo;s too, for example:</p>
+<p>If your like me feeling young and haven&rsquo;t aged a day since 1995 the truth is
+time goes by. Even if you do your best to keep young it&rsquo;s hard to change. Java
+has done a good job: HotSpot, Regular expressions, NIO, Generics, Annotations,
+primitive wrapper classes with autoboxing, Enumerations, Varargs and Lambda
+Expressions. Just take a look at the
+<a href="https://en.wikipedia.org/wiki/Java_version_history">Java version history</a>. But
+all this adds up and gains weight. Java has become hard to learn and understand
+and there are many pitfalls and compromises. Some times the right decision is
+to start all over and make something new based on what you&rsquo;ve learnt.</p>
 
-<pre><code class="language-java">	class Person {
-		def name
-
-		def sayHello() { println &quot;Hi, my name is $name!&quot;}
-	}
-
-	class Dancer {
-		def dance() { println &quot;I can dance&quot; }
-	}
-
-	class Singer {
-		def sing() { println &quot;I can sing&quot; }
-	}
+<pre><code class="language-shell"># OSX
+$open http://tour.golang.org/welcome/1
 </code></pre>
 
-<p>We can now create a person who dance and sing. The <code>Interceptor</code> must be injected
-after the mixin:</p>
-
-<pre><code class="language-java">	Person.mixin Singer
-	Person.mixin Dancer
-	Interceptor.injectIn(Person)
-
-	def p = new Person(name: &quot;Jill&quot;)
-	p.sayHello()
-	p.sing()
-	p.dance()
-</code></pre>
-
-<p>This will produce the following output:</p>
-
-<pre><code class="language-shell">	before: Person.sayHello, args:[] --&gt;
-	before: Person.println, args:[Hi, my name is Jill!] --&gt;
-	Hi, my name is Jill!
-	after: Person.println, return value:null &lt;--
-	after: Person.sayHello, return value:null &lt;--
-	before: Person.sing, args:[] --&gt;
-	I can sing
-	after: Person.sing, return value:null &lt;--
-	before: Person.dance, args:[] --&gt;
-	I can dance
-	after: Person.dance, return value:null &lt;--
-</code></pre>
-
-<p>As we can see in the example above the <code>println</code>-method is part of the Groovy object.</p>
+<p>I&rsquo;m keeping Java in my toolbox but I&rsquo;ve started using Golang as my new tool and
+it&rsquo;s great fun.</p>
 </p>
-          <p>18 Aug 2014
+          <p>4 Feb 2016
             
               
                 <a href="http://larmog.github.io//tags/development/">#Development</a>
               
-                <a href="http://larmog.github.io//tags/groovy/">#Groovy</a>
+                <a href="http://larmog.github.io//tags/java/">#Java</a>
+              
+                <a href="http://larmog.github.io//tags/golang/">#Golang</a>
               
             
           </p>
@@ -196,13 +165,13 @@ after the mixin:</p>
     <div class="row">
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/"><i class="mdi-navigation-arrow-back"></i></a>
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
       
       </div>
       <div class="col s6 m10 center">&nbsp</div>
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-forward"></i></a>
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/"><i class="mdi-navigation-arrow-forward"></i></a>
       
       </div>
     </div>

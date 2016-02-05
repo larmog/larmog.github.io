@@ -46,3 +46,11 @@ p {
 footer.page-footer {
   margin: 0;
 }
+
+.language-shell {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #3f4549;
+  color: #63CC63;
+}

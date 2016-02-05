@@ -18,6 +18,7 @@
     <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
     <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
     <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
   </ul>
   <div id="index-banner" class="parallax-container">
   <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
@@ -61,6 +62,39 @@
   
   <div class="col m4 s12">
     <div class="card-panel">
+      <h4><a href="http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/">Thank you Java, but it&#39;s time to Go</a></h4>
+      <p>
+      
+        
+          <a href="http://larmog.github.io//categories/development/">Development</a>
+        
+       
+      </p>
+      <p><p>I&rsquo;ve been a dedicated Java developer since 1998 and it&rsquo;s been a great tool.
+But recently there&rsquo;s a couple of things that&rsquo;s been nagging me. I always been
+a slow typer (never learnt how use a keyboard correctly). When programming
+that&rsquo;s not always a bad thing.
+But Java is very verbose and all those <code>private</code>, <code>pubic</code>, <code>;</code>, <code>getXXX</code>,
+<code>setXXX</code> kind of gets in the way.</p>
+</p>
+      <p>
+      4 Feb 2016
+      
+        
+          <a href="http://larmog.github.io//tags/development/">#Development</a>
+        
+          <a href="http://larmog.github.io//tags/java/">#Java</a>
+        
+          <a href="http://larmog.github.io//tags/golang/">#Golang</a>
+        
+       
+      </p>
+    </div>
+  </div>
+
+  
+  <div class="col m4 s12">
+    <div class="card-panel">
       <h4><a href="http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/">Simple Groovy AOP using MOP</a></h4>
       <p>
       
@@ -69,7 +103,11 @@
         
        
       </p>
-      <p>I was looking for a simple solution for adding cross cutting concerns to Groovy classes. The most obvious solution was to implement GroovyInterceptable but I wanted a less intrusive solution. After a bit of googling I&rsquo;ve stumbled across DelegatingMetaClass. Here is a simple interceptor that works like a around advice. It only logs all method calls for a class. class Interceptor extends DelegatingMetaClass { Interceptor(final Class cls) { super(cls) initialize() } public Object invokeMethod(Object obj, String method, Object[] args) { String cls = obj.class.simpleName println &quot;before: $cls.$method, args:$args --&gt;&quot; def val = null try { val = super.invokeMethod(obj, method, args) } catch(Exception e) { println &quot;after: $cls.$method, has thrown:$e &lt;--&quot; throw e } println &quot;after: $cls.$method, return value:$val &lt;--&quot; return val; } def static injectIn(Class cls) { cls.metaClass = new Interceptor(cls) } } We can now use the Interceptor to trace calls to ArrayList like this: Interceptor.InjectIn(ArrayList) def list = [] list &lt;&lt; &quot;Joe&quot; If we run the above it will produce: before: ArrayList.leftShift, args:[Joe] --&gt; after: ArrayList.leftShift, return value:[Joe] &lt;-- It works width mixin&rsquo;s too, for example: class Person { def name def sayHello() { println &quot;Hi, my name is $name!&quot;} } class Dancer { def dance() { println &quot;I can dance&quot; } } class Singer { def sing() { println &quot;I can sing&quot; } } We can now create a person who dance and sing.</p>
+      <p><p>I was looking for a simple solution for adding cross cutting concerns to Groovy
+classes. The most obvious solution was to implement <code>GroovyInterceptable</code> but I wanted a
+less intrusive solution. After a bit of googling I&rsquo;ve stumbled across
+<code>DelegatingMetaClass</code>.</p>
+</p>
       <p>
       18 Aug 2014
       
