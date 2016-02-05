@@ -1,6 +1,6 @@
 +++
 date = "2016-02-04T20:56:35+01:00"
-draft = true
+draft = false
 title = "Thank you Java, but it's time to Go"
 author = "Lars Mogren"
 tags = [ "Development", "Java", "Golang" ]
