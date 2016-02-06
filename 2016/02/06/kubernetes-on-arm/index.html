@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
-  <title>Thank you Java, but it&#39;s time to Go</title>
+  <title>Kubernetes On ARM</title>
   <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
   <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
@@ -61,88 +61,84 @@
     <div class="row">
       <div class="col s12">
         <div class="card-panel">
-          <h4>Thank you Java, but it&#39;s time to Go</h4>
+          <h4>Kubernetes On ARM</h4>
           <p>
           
             
               <a href="http://larmog.github.io//categories/development/">Development</a>
             
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
           
           </p>
-          <p><p>I&rsquo;ve been a dedicated Java developer since 1998 and it&rsquo;s been a great tool.
-But recently there&rsquo;s a couple of things I&rsquo;ve been fretting about. I always been
-slow using keyboard (never learnt how to use it correctly). When programming
-that&rsquo;s not always a bad thing, it gives you time to think about what you&rsquo;re
-writing.
-But Java is very verbose and all those <code>private</code>, <code>pubic</code>, <code>;</code>, <code>getXXX</code>,
-<code>setXXX</code> kind of gets in the way.</p>
+          <p><p>I really like Kubernetes for orchestrating Docker containers. If you&rsquo;re don&rsquo;t
+familiar with Kubernetes I can highly recommend to take a look at
+(<a href="http://kubernetes.io">http://kubernetes.io</a>).</p>
 
-<pre><code class="language-bash">package main
+<p>You can easily run you&rsquo;re own Kubernetes cluster on your local machine using
+Vagrant or run Kubernetes in the cloud using AWS, Azure or Google Compute.
+But I like a more hands on solution and I always wanted my own &ldquo;data center&rdquo;.
+On the other hand I don&rsquo;t want to spend a fortune building a DC just for fun.</p>
 
-import &quot;fmt&quot;
+<p>A great alternative is to use ARM SoC boards like Raspberry PI. Thank&rsquo;s to
+<a href="https://github.com/luxas">Lucas Käldström</a> and
+<a href="http://blog.hypriot.com/">Hypriot</a> this is a rather straight forward process.</p>
 
-type Vertex struct {
-	X int
-	Y int
-}
+<p>I used the <code>hypriotos</code> image and Lucas <code>deb</code>-package to install <code>kube-config</code>.</p>
 
-func main() {
-	v := Vertex{1, 2}
-	v.X = 4
-	fmt.Println(v.X)
-}
-</code></pre>
 
-<p>Another thing that turns out to be complicated is coding standards. It&rsquo;s all
-well when your on a greenfield project and the team can decide their own rules.
-But have you ever worked with legacy code that&rsquo;s been abused for several years
-buy developers who rather wish they were on that super cool project? I know you
-can&rsquo;t blame <code>Java</code> for this but it&rsquo;s still a problem. Coding standards are like
-fashion and every developer has an opinion on where to put the <code>{}</code> and don&rsquo;t
-mention line endings when your in a mixed Windows and *nix environment.</p>
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Six Raspberry Pi:s in a cluster</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/IMG_1936.png"  />
+      
+    </div>
+  </div>
+</figure>
 
-<pre><code class="language-shell"># Gofmt is a tool that automatically formats Go source code
-$go fmt
-</code></pre>
 
-<p>When Java was released in 1995 the promise <em>&ldquo;write once, run anywhere&rdquo;</em> sounded
-very tempting but has shown not to be altogether true. There have been, and
-will always be, bugs and small differences in the JVM which means that your
-program will always be dependent on the version of the JVM running your byte
-code. That means you have at least two artifacts to consider and
-one of them is out of your control.</p>
 
-<pre><code class="language-shell"># Static compiled go binary that can be used in a Docker image.
-# The binary is compiled using golang Docker image.
-$CGO_ENABLED=0 GOOS=linux go build -ldflags &quot;-s&quot; -a -installsuffix cgo -o main
-</code></pre>
+<p>
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Nodes in my cluster</span>
+          <p>
+          Here you can see the nodes in the cluster. I&#39;m using the service-loadbalancer addon (a topic for another post).
+          
+              
+          
+        </p> 
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/k8s.png" alt="Here you can see the nodes in the cluster. I&#39;m using the service-loadbalancer addon (a topic for another post)." />
+      
+    </div>
+  </div>
+</figure>
 
-<p>If your like me feeling young and haven&rsquo;t aged a day since 1995, the truth is
-time goes by. Even if you do your best to keep young, it&rsquo;s hard to change. Java
-has done a good job: HotSpot, Regular expressions, NIO, Generics, Annotations,
-primitive wrapper classes with autoboxing, Enumerations, Varargs and Lambda
-Expressions. Just take a look at the
-<a href="https://en.wikipedia.org/wiki/Java_version_history">Java version history</a>. But
-all this adds up and gains weight. Java has become hard to learn and understand
-and there are many pitfalls and compromises. Some times the right decision is
-to start all over and make something new based on what you&rsquo;ve learnt.</p>
-
-<pre><code class="language-shell"># OSX
-$open http://tour.golang.org/welcome/1
-</code></pre>
-
-<p>I&rsquo;m keeping Java in my toolbox but I&rsquo;ve started using
-<a href="https://golang.org/">The Go Programming Language</a> as my new tool and
-it&rsquo;s great fun.</p>
 </p>
-          <p>4 Feb 2016
+</p>
+          <p>6 Feb 2016
             
               
                 <a href="http://larmog.github.io//tags/development/">#Development</a>
               
-                <a href="http://larmog.github.io//tags/java/">#Java</a>
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
               
-                <a href="http://larmog.github.io//tags/golang/">#Golang</a>
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
               
             
           </p>
@@ -150,37 +146,37 @@ it&rsquo;s great fun.</p>
 
 
 
-<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f&text=Thank%20you%20Java%2c%20but%20it%27s%20time%20to%20Go&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f&text=Kubernetes%20On%20ARM&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
     <i class="fa fa-twitter"></i>
 </a>
 
 
-<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f" target="_blank" class="waves-effect waves-light btn google-plus">
     <i class="fa fa-google-plus"></i>
 </a>
 
 
-<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f" target="_blank" class="waves-effect waves-light btn facebook">
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f" target="_blank" class="waves-effect waves-light btn facebook">
     <i class="fa fa-facebook"></i>
 </a>
 
 
-<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f&title=Thank%20you%20Java%2c%20but%20it%27s%20time%20to%20Go" target="_blank" class="waves-effect waves-light btn stumbleupon">
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f&title=Kubernetes%20On%20ARM" target="_blank" class="waves-effect waves-light btn stumbleupon">
     <i class="fa fa-stumbleupon"></i>
 </a>
 
 
-<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f&title=Thank%20you%20Java%2c%20but%20it%27s%20time%20to%20Go" target="_blank" class="waves-effect waves-light btn reddit">
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f&title=Kubernetes%20On%20ARM" target="_blank" class="waves-effect waves-light btn reddit">
     <i class="fa fa-reddit"></i>
 </a>
 
 
-<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f&mini=true&title=Thank%20you%20Java%2c%20but%20it%27s%20time%20to%20Go&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f&mini=true&title=Kubernetes%20On%20ARM&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
     <i class="fa fa-linkedin"></i>
 </a>
 
 
-<a href="mailto:?subject=Thank%20you%20Java%2c%20but%20it%27s%20time%20to%20Go&body=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f04%2fthank-you-java-but-its-time-to-go%2f" target="_blank" class="waves-effect waves-light btn email">
+<a href="mailto:?subject=Kubernetes%20On%20ARM&body=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f06%2fkubernetes-on-arm%2f" target="_blank" class="waves-effect waves-light btn email">
     <i class="fa fa-envelope"></i>
 </a>
 </div>
@@ -207,13 +203,13 @@ it&rsquo;s great fun.</p>
     <div class="row">
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/06/kubernetes-on-arm/"><i class="mdi-navigation-arrow-back"></i></a>
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
       
       </div>
       <div class="col s6 m10 center">&nbsp</div>
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/"><i class="mdi-navigation-arrow-forward"></i></a>
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/"><i class="mdi-navigation-arrow-forward"></i></a>
       
       </div>
     </div>
