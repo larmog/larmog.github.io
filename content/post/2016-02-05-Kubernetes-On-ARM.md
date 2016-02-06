@@ -1,6 +1,6 @@
 +++
 date = "2016-02-06T10:33:08+01:00"
-draft = true
+draft = false
 title = "Kubernetes On ARM"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI" ]
