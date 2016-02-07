@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Gogs and Drone On Kubernetes-ARM - Part 1</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.png);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.png">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Gogs and Drone On Kubernetes-ARM - Part 1</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+          
+          </p>
+          <p><p>This is part 1 in a series of posts describing how I have setup Gogs and Drone
+on my Kubernetes-ARM cluster. <a href="https://gogs.io/">Gogs - Go Git Service</a> is
+<em>A painless self-hosted Git service</em> and is a great alternative when you can&rsquo;t
+use GitHub or wan&rsquo;t to host your own Git service.</p>
+
+<p>The easiest way to get started with Gogs (and of course the only alternative if
+you wan&rsquo;t to use Kubernetes) is to use a Docker image. Gogs has a Docker image
+ready on Docker Hub. Unfortunately that image won&rsquo;t work on ARM.
+Thankfully the Hypriot team has two Gogs Docker images ready: <a href="https://hub.docker.com/r/hypriot/rpi-gogs-raspbian/">hypriot/rpi-gogs-raspbian</a>
+and <a href="https://hub.docker.com/r/hypriot/rpi-gogs-alpine/">hypriot/rpi-gogs-alpine</a></p>
+
+<p>Lets try it out:</p>
+
+<pre><code class="language-shell">$ kubectl run my-gogs-service --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
+replicationcontroller &quot;my-gogs-service&quot; created
+</code></pre>
+
+<p>Here we can see our pod is running:</p>
+
+<pre><code class="language-shell">$ kubectl get pods
+NAME                      READY     STATUS    RESTARTS   AGE
+my-gogs-service-3adh8     1/1       Running   0          1m
+</code></pre>
+
+<p>Now it&rsquo;s time to expose our new pod as a service:</p>
+
+<pre><code class="language-shell">$ kubectl expose rc my-gogs-service --port=80 --target-port=3000 --name=my-gogs-service
+service &quot;my-gogs-service&quot; exposed
+</code></pre>
+
+<p>If all went well we can now access or new service:</p>
+
+<pre><code class="language-shell">$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version:
+&lt;p class=&quot;left&quot; id=&quot;footer-rights&quot;&gt;© 2015 Gogs · Version: 0.6.1.0325 Beta Page:&lt;strong&gt;2259ms&lt;/strong&gt;
+</code></pre>
+
+<p>But oops! that´s kind of an old version. Our goal is to use Gogs together with
+Drone and this won&rsquo;t work. We need a version greater than <code>0.6.16.1022</code>
+(<a href="http://readme.drone.io/setup/gogs/">see</a>). I guess this is the difference
+between <em>leading edge</em> and <em>bleeding edge</em>. Again we&rsquo;re saved by some one else&rsquo;s
+work. Gogs has a <code>Dockerfile.rpi</code> ready that we can use to build our own image.
+I&rsquo;ve built and pushed an image to Docker Hub that you can use:
+<a href="https://hub.docker.com/r/larmog/rpi-gogs/"><code>larmog/rpi-gogs</code></a> that is <code>33MB</code>.</p>
+
+<p>So lets repeat the steps above with the new image and <code>curl</code> for the version:</p>
+
+<pre><code class="language-shell">$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version
+© 2016 Gogs Version: 0.8.23.0126 Page: &lt;strong&gt;1622ms&lt;/strong&gt; Template: &lt;strong&gt;1619ms&lt;/strong&gt;
+</code></pre>
+
+<p>Version <code>0.8.23.0126</code>, that looks so much better don&rsquo;t, you think?</p>
+
+<p>Next step is to install Gogs. But hey&hellip; wait a minute - what about persistence?
+We need to add a <em>Volume</em>. I&rsquo;m using my home NAS, a DiskStation, over NFS. The
+only thing we need to do is to share a volume over NFS and install NFS on our
+nodes.</p>
+
+<pre><code class="language-shell">$ sudo apt-get -y install nfs-common
+</code></pre>
+
+<p>Next we need to create a <code>PersistentVolume</code>:</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-gogs
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: /volume1/kbn1/gogs
+    server: my-nfs-server
+</code></pre>
+
+<p>and then a <code>PersistentVolumeClaim</code>:</p>
+
+<pre><code>kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-gogs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+</code></pre>
+
+<p>and lastly mount the volume in our pod template:</p>
+
+<pre><code>apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    app: gogs
+  name: gogs
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    app: gogs
+  template:
+    metadata:
+      labels:
+        app: gogs
+    spec:
+      containers:
+      - image: larmog/rpi-gogs:0.8.23.0126-2
+        imagePullPolicy: IfNotPresent
+        name: gogs
+        volumeMounts:
+        - mountPath: &quot;/data&quot;
+          name: persistentdata
+        resources: {}
+        ports:
+          - containerPort: 3000
+            name: web   
+            protocol: TCP
+          - containerPort: 22
+            name: ssh
+            protocol: TCP
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: persistentdata
+          persistentVolumeClaim:
+            claimName: pvc-gogs
+</code></pre>
+
+<p>NFS v4 is kind of hard to use if you don&rsquo;t have synchronized your users and
+groups in your domain. I use <code>all_squash</code> to a specific UID/GID in order to get
+it to work with my NAS, and that works fine for Gogs but I&rsquo;ve got plans to
+replace NFS with <a href="https://www.gluster.org/">GlusterFS</a> and it&rsquo;s on the <code>TODO</code>
+list.</p>
+
+<p>Let&rsquo;s enjoy the fruit of our work (or as we say in Sweden: &ldquo;ett Ernst ögonblick&rdquo;):</p>
+
+<pre><code class="language-shell">$ kubectl get services
+NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+my-gogs      10.0.0.85    &lt;none&gt;        80/TCP     app=gogs       9d
+my-gogs-ssh  10.0.0.216   nodes         2222/TCP   app=gogs       9d
+kubernetes   10.0.0.1     &lt;none&gt;        443/TCP    &lt;none&gt;         25d
+</code></pre>
+
+<p>Notice that I&rsquo;ve also created a service for the <code>ssh</code> port.
+Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
+and complete the installation.</p>
+
+<p>In the next part I will explain how to set up <code>service-loadbalancer</code> to
+expose your services outside your cluster.</p>
+</p>
+          <p>7 Feb 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/gogs/">#Gogs</a>
+              
+                <a href="http://larmog.github.io//tags/drone/">#Drone</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f&text=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%201&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%201" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%201" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f&mini=true&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%201&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%201&body=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f07%2fgogs-and-drone-on-kubernetes-arm---part-1%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/06/kubernetes-on-arm/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

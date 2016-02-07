@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Docker on kodbasen</title>
-    <link>http://larmog.github.io/tags/docker/</link>
-    <description>Recent content in Docker on kodbasen</description>
+    <title>Kubernetes on kodbasen</title>
+    <link>http://larmog.github.io/categories/kubernetes/</link>
+    <description>Recent content in Kubernetes on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
     <lastBuildDate>Sun, 07 Feb 2016 11:17:02 +0100</lastBuildDate>
-    <atom:link href="http://larmog.github.io/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://larmog.github.io/categories/kubernetes/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Gogs and Drone On Kubernetes-ARM - Part 1</title>
@@ -170,72 +170,6 @@ and complete the installation.&lt;/p&gt;
 
 &lt;p&gt;In the next part I will explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to
 expose your services outside your cluster.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Kubernetes On ARM</title>
-      <link>http://larmog.github.io/2016/02/06/kubernetes-on-arm/</link>
-      <pubDate>Sat, 06 Feb 2016 10:33:08 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2016/02/06/kubernetes-on-arm/</guid>
-      <description>&lt;p&gt;I really like Kubernetes for orchestrating Docker containers. If you&amp;rsquo;re don&amp;rsquo;t
-familiar with Kubernetes I can highly recommend to take a look at
-(&lt;a href=&#34;http://kubernetes.io&#34;&gt;http://kubernetes.io&lt;/a&gt;).&lt;/p&gt;
-
-&lt;p&gt;You can easily run you&amp;rsquo;re own Kubernetes cluster on your local machine using
-Vagrant or run Kubernetes in the cloud using AWS, Azure or Google Compute.
-But I like a more hands on solution and I always wanted my own &amp;ldquo;data center&amp;rdquo;.
-On the other hand I don&amp;rsquo;t want to spend a fortune building a DC just for fun.&lt;/p&gt;
-
-&lt;p&gt;A great alternative is to use ARM SoC boards like Raspberry PI. Thank&amp;rsquo;s to
-&lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas Käldström&lt;/a&gt; and
-&lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;Hypriot&lt;/a&gt; this is a rather straight forward process.&lt;/p&gt;
-
-&lt;p&gt;I used the &lt;code&gt;hypriotos&lt;/code&gt; image and Lucas &lt;code&gt;deb&lt;/code&gt;-package to install &lt;code&gt;kube-config&lt;/code&gt;.&lt;/p&gt;
-
-
-&lt;figure&gt;
-  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
-    &lt;div class=&#34;card-content black-text&#34;&gt;
-      
-      &lt;figcaption&gt;
-          &lt;span class=&#34;card-title black-text&#34;&gt;Six Raspberry Pi:s in a cluster&lt;/span&gt;
-          
-      &lt;/figcaption&gt;
-      
-      
-          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/IMG_1936.png&#34;  /&gt;
-      
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/figure&gt;
-
-
-
-&lt;p&gt;
-&lt;figure&gt;
-  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
-    &lt;div class=&#34;card-content black-text&#34;&gt;
-      
-      &lt;figcaption&gt;
-          &lt;span class=&#34;card-title black-text&#34;&gt;Nodes in my cluster&lt;/span&gt;
-          &lt;p&gt;
-          Here you can see the nodes in the cluster. I&amp;#39;m using the service-loadbalancer addon (a topic for another post).
-          
-              
-          
-        &lt;/p&gt; 
-      &lt;/figcaption&gt;
-      
-      
-          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/k8s.png&#34; alt=&#34;Here you can see the nodes in the cluster. I&amp;#39;m using the service-loadbalancer addon (a topic for another post).&#34; /&gt;
-      
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/figure&gt;
-
-&lt;/p&gt;
 </description>
     </item>
     

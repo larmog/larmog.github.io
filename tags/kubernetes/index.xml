@@ -7,8 +7,171 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sat, 06 Feb 2016 10:33:08 +0100</lastBuildDate>
+    <lastBuildDate>Sun, 07 Feb 2016 11:17:02 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Gogs and Drone On Kubernetes-ARM - Part 1</title>
+      <link>http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/</link>
+      <pubDate>Sun, 07 Feb 2016 11:17:02 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/</guid>
+      <description>&lt;p&gt;This is part 1 in a series of posts describing how I have setup Gogs and Drone
+on my Kubernetes-ARM cluster. &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs - Go Git Service&lt;/a&gt; is
+&lt;em&gt;A painless self-hosted Git service&lt;/em&gt; and is a great alternative when you can&amp;rsquo;t
+use GitHub or wan&amp;rsquo;t to host your own Git service.&lt;/p&gt;
+
+&lt;p&gt;The easiest way to get started with Gogs (and of course the only alternative if
+you wan&amp;rsquo;t to use Kubernetes) is to use a Docker image. Gogs has a Docker image
+ready on Docker Hub. Unfortunately that image won&amp;rsquo;t work on ARM.
+Thankfully the Hypriot team has two Gogs Docker images ready: &lt;a href=&#34;https://hub.docker.com/r/hypriot/rpi-gogs-raspbian/&#34;&gt;hypriot/rpi-gogs-raspbian&lt;/a&gt;
+and &lt;a href=&#34;https://hub.docker.com/r/hypriot/rpi-gogs-alpine/&#34;&gt;hypriot/rpi-gogs-alpine&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Lets try it out:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl run my-gogs-service --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
+replicationcontroller &amp;quot;my-gogs-service&amp;quot; created
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here we can see our pod is running:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get pods
+NAME                      READY     STATUS    RESTARTS   AGE
+my-gogs-service-3adh8     1/1       Running   0          1m
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to expose our new pod as a service:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl expose rc my-gogs-service --port=80 --target-port=3000 --name=my-gogs-service
+service &amp;quot;my-gogs-service&amp;quot; exposed
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If all went well we can now access or new service:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version:
+&amp;lt;p class=&amp;quot;left&amp;quot; id=&amp;quot;footer-rights&amp;quot;&amp;gt;© 2015 Gogs · Version: 0.6.1.0325 Beta Page:&amp;lt;strong&amp;gt;2259ms&amp;lt;/strong&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;But oops! that´s kind of an old version. Our goal is to use Gogs together with
+Drone and this won&amp;rsquo;t work. We need a version greater than &lt;code&gt;0.6.16.1022&lt;/code&gt;
+(&lt;a href=&#34;http://readme.drone.io/setup/gogs/&#34;&gt;see&lt;/a&gt;). I guess this is the difference
+between &lt;em&gt;leading edge&lt;/em&gt; and &lt;em&gt;bleeding edge&lt;/em&gt;. Again we&amp;rsquo;re saved by some one else&amp;rsquo;s
+work. Gogs has a &lt;code&gt;Dockerfile.rpi&lt;/code&gt; ready that we can use to build our own image.
+I&amp;rsquo;ve built and pushed an image to Docker Hub that you can use:
+&lt;a href=&#34;https://hub.docker.com/r/larmog/rpi-gogs/&#34;&gt;&lt;code&gt;larmog/rpi-gogs&lt;/code&gt;&lt;/a&gt; that is &lt;code&gt;33MB&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;So lets repeat the steps above with the new image and &lt;code&gt;curl&lt;/code&gt; for the version:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version
+© 2016 Gogs Version: 0.8.23.0126 Page: &amp;lt;strong&amp;gt;1622ms&amp;lt;/strong&amp;gt; Template: &amp;lt;strong&amp;gt;1619ms&amp;lt;/strong&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Version &lt;code&gt;0.8.23.0126&lt;/code&gt;, that looks so much better don&amp;rsquo;t, you think?&lt;/p&gt;
+
+&lt;p&gt;Next step is to install Gogs. But hey&amp;hellip; wait a minute - what about persistence?
+We need to add a &lt;em&gt;Volume&lt;/em&gt;. I&amp;rsquo;m using my home NAS, a DiskStation, over NFS. The
+only thing we need to do is to share a volume over NFS and install NFS on our
+nodes.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ sudo apt-get -y install nfs-common
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next we need to create a &lt;code&gt;PersistentVolume&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-gogs
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: /volume1/kbn1/gogs
+    server: my-nfs-server
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and then a &lt;code&gt;PersistentVolumeClaim&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-gogs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and lastly mount the volume in our pod template:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    app: gogs
+  name: gogs
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    app: gogs
+  template:
+    metadata:
+      labels:
+        app: gogs
+    spec:
+      containers:
+      - image: larmog/rpi-gogs:0.8.23.0126-2
+        imagePullPolicy: IfNotPresent
+        name: gogs
+        volumeMounts:
+        - mountPath: &amp;quot;/data&amp;quot;
+          name: persistentdata
+        resources: {}
+        ports:
+          - containerPort: 3000
+            name: web   
+            protocol: TCP
+          - containerPort: 22
+            name: ssh
+            protocol: TCP
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: persistentdata
+          persistentVolumeClaim:
+            claimName: pvc-gogs
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;NFS v4 is kind of hard to use if you don&amp;rsquo;t have synchronized your users and
+groups in your domain. I use &lt;code&gt;all_squash&lt;/code&gt; to a specific UID/GID in order to get
+it to work with my NAS, and that works fine for Gogs but I&amp;rsquo;ve got plans to
+replace NFS with &lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; and it&amp;rsquo;s on the &lt;code&gt;TODO&lt;/code&gt;
+list.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s enjoy the fruit of our work (or as we say in Sweden: &amp;ldquo;ett Ernst ögonblick&amp;rdquo;):&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get services
+NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+my-gogs      10.0.0.85    &amp;lt;none&amp;gt;        80/TCP     app=gogs       9d
+my-gogs-ssh  10.0.0.216   nodes         2222/TCP   app=gogs       9d
+kubernetes   10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&amp;gt;         25d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Notice that I&amp;rsquo;ve also created a service for the &lt;code&gt;ssh&lt;/code&gt; port.
+Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
+and complete the installation.&lt;/p&gt;
+
+&lt;p&gt;In the next part I will explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to
+expose your services outside your cluster.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Kubernetes On ARM</title>
