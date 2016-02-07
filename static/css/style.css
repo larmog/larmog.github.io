@@ -53,6 +53,7 @@ footer.page-footer {
   padding: 0.5em;
   background: #3f4549;
   color: #63CC63;
+  font-size: smaller;
 }
 
 .btn { margin-top: 5px; }
