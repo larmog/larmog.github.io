@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Gogs and Drone On Kubernetes-ARM - Part 2</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.png);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.png">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Gogs and Drone On Kubernetes-ARM - Part 2</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+          
+          </p>
+          <p><p>This is the second part in a series of posts describing how I have setup Gogs
+and Drone on
+<a href="/2016/02/06/kubernetes-on-arm/">Kubernetes-On-ARM</a> cluster.
+In <a href="/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/">Part 1</a> we
+talked about setting up Gogs.</p>
+
+<p>In this part I&rsquo;ll explain how to setup <code>service-loadbalancer</code> to expose services
+outside the cluster.</p>
+
+<p>I&rsquo;m using <a href="https://github.com/luxas">Lucas Käldström</a>:s great
+<a href="https://github.com/luxas/kubernetes-on-arm">kubernetes-on-arm</a> project.
+There&rsquo;s a load-balancer addon based on <a href="https://github.com/kubernetes/contrib">kubernetes/contrib/service-loadbalancer</a>
+that wasn&rsquo;t ready in the <code>0.6.3</code> release.</p>
+
+<p>Before we begin you might take a look at
+<a href="https://github.com/kubernetes/contrib/tree/master/service-loadbalancer">service-loadbalancer</a>.</p>
+
+<p>What I did was to build the <code>service-loadbalancer</code> from the
+<code>kubernetes/contrib master branch</code>. Once again Lucas have made a great job and
+created a docker file for building the Kubernetes-ARM binaries on x86.</p>
+
+<pre><code class="language-shell">$ # Clone the repository
+$ git clone https://github.com/luxas/kubernetes-on-arm
+$ # Build the Docker image
+$ cd kubernetes-on-arm/scripts/build-k8s-on-amd64
+$ docker build -t build-k8s-on-amd64 .
+$ # Create a container
+$ docker run --name=build-k8s-on-amd64 build-k8s-on-amd64 true
+$ # Copy out the binaries from the container
+$ docker cp build-k8s-on-amd64:/output .
+</code></pre>
+
+<p>The <code>service-loadbalancer</code> binary is located in the <code>output</code> directory.
+Transfer the file to the nodes that will have the role of load-balancer.
+e.g.</p>
+
+<pre><code class="language-shell">$ scp ./output/service-loadbalancer \ xxx.xxx.xxx.xxx:/etc/kubernetes/source/images/kubernetesonarm/_bin/latest
+</code></pre>
+
+<p>The <code>service-loadbalancer</code>uses a template for creating a <code>ha-proxy.cfg</code>.
+The template I&rsquo;m using can be found here: <a href="https://goo.gl/TzvKhX">template.cfg</a>
+On each node build the <code>kubernetesonarm/loadbalancer</code> image.</p>
+
+<pre><code class="language-shell">$ cd /etc/kubernetes/source/images/kubernetesonarm/loadbalancer
+$ mv template.cfg template.cfg.org
+$ wget wget https://goo.gl/TzvKhX -O template.cfg
+$ ./build.sh
+</code></pre>
+
+<p>Phew&hellip; were half way. The Docker image is in place on our nodes. Now we need
+to label them so that the scheduler can place the <code>service-loadbalancer</code> on the
+right nodes.</p>
+
+<pre><code class="language-shell">$ kubectl label --overwrite nodes &lt;node name&gt; role=loadbalancer
+$ kubectl get nodes
+NAME           LABELS                                                  STATUS    AGE
+&lt;node name&gt;   kubernetes.io/hostname=&lt;node name&gt;,role=loadbalancer     Ready     2d
+</code></pre>
+
+<p>Now it&rsquo;s time to create the <code>loadbalancer</code>. If you wan&rsquo;t to use <code>https</code> you need
+to create a <code>secret</code> and mount the volume in your pod template.
+Here&rsquo;s my <code>loadbalancer-rc.yaml</code>:</p>
+
+<pre><code>apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: service-loadbalancer
+  namespace: kube-system
+  labels:
+    app: service-loadbalancer
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    app: service-loadbalancer
+    version: v1
+  template:
+    metadata:
+      labels:
+        app: service-loadbalancer
+        version: v1
+    spec:
+      nodeSelector:
+        role: loadbalancer
+      volumes:
+      - name: ssl-volume
+        secret:
+          secretName: kodbasen-ssl-secret
+      containers:
+      - image: kubernetesonarm/loadbalancer
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        name: haproxy
+        ports:
+        # All http services
+        - containerPort: 80
+          hostPort: 80
+          protocol: TCP
+        # nginx https
+        - containerPort: 443
+          hostPort: 443
+          protocol: TCP
+        # mysql
+        - containerPort: 3306
+          hostPort: 3306
+          protocol: TCP
+        # haproxy stats
+        - containerPort: 1936
+          hostPort: 1936
+          protocol: TCP
+        # gogs ssh
+        - containerPort: 2222
+          hostPort: 2222
+          protocol: TCP
+        volumeMounts:
+        - name: ssl-volume
+          readOnly: true
+          mountPath: &quot;/ssl&quot;
+        resources: {}
+        args:
+        - --tcp-services=my-gogs-ssh:2222
+        - --ssl-cert=/ssl/server.pem
+        - --ssl-ca-cert=/ssl/ca.crt
+</code></pre>
+
+<p>He&rsquo;re you can see that I&rsquo;ve exposed the <code>my-gogs-ssh</code> as a TCP service.</p>
+
+<p>Now we&rsquo;re ready to expose our Gogs service to the outside world. We need to
+change our Gogs service from
+<a href="/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/">Part 1</a> slightly and add
+some annotations.</p>
+
+<pre><code>apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    serviceloadbalancer/lb.sslTerm: &quot;true&quot;
+    serviceloadbalancer/lb.host: &quot;gogs.replace.me&quot;
+    serviceloadbalancer/lb.cookie-sticky-session: &quot;true&quot;
+  labels:
+    app: my-gogs-service
+  name: my-gogs-service
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: my-gogs
+  sessionAffinity: None
+  type: ClusterIP
+</code></pre>
+
+<ul>
+<li><code>serviceloadbalancer/lb.sslTerm: &quot;true&quot;</code> annotation says that we wan&rsquo;t to
+use <code>https</code></li>
+<li><code>serviceloadbalancer/lb.host: &quot;gogs.replace.me&quot;</code> is the <code>virtual host</code></li>
+<li><code>serviceloadbalancer/lb.cookie-sticky-session: &quot;true&quot;</code> enables sticky sessions
+between your pods (<code>replicas &gt; 1</code>)</li>
+</ul>
+
+<p>If everything is working you should be rewarded with a <code>ha-proxy</code> status page
+where you can monitor your exposed services. Fire up
+<code>http://&lt;loadbalancer ip&gt;:1936/</code> in your favorite browser and take a look.</p>
+
+<p>That is all for now. In the next part we will take a look at the <code>CI</code> tool
+<a href="https://github.com/drone/drone">Drone</a> and how to get it working on our
+<em>Kubernetes-ARM</em> cluster. Prepare for a journey <em>down the rabbit hole</em>.</p>
+</p>
+          <p>8 Feb 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/gogs/">#Gogs</a>
+              
+                <a href="http://larmog.github.io//tags/drone/">#Drone</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f&text=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%202&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%202" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%202" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f&mini=true&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%202&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%202&body=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

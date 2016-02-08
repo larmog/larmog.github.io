@@ -3,8 +3,13 @@
   
   <url>
     <loc>http://larmog.github.io/</loc>
-    <lastmod>2016-02-07T11:17:02+01:00</lastmod>
+    <lastmod>2016-02-08T09:21:47+01:00</lastmod>
     <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/</loc>
+    <lastmod>2016-02-08T09:21:47+01:00</lastmod>
   </url>
   
   <url>

@@ -7,8 +7,191 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sun, 07 Feb 2016 11:17:02 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 08 Feb 2016 09:21:47 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Gogs and Drone On Kubernetes-ARM - Part 2</title>
+      <link>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/</link>
+      <pubDate>Mon, 08 Feb 2016 09:21:47 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/</guid>
+      <description>&lt;p&gt;This is the second part in a series of posts describing how I have setup Gogs
+and Drone on
+&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; cluster.
+In &lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Part 1&lt;/a&gt; we
+talked about setting up Gogs.&lt;/p&gt;
+
+&lt;p&gt;In this part I&amp;rsquo;ll explain how to setup &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose services
+outside the cluster.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;m using &lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas Käldström&lt;/a&gt;:s great
+&lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;kubernetes-on-arm&lt;/a&gt; project.
+There&amp;rsquo;s a load-balancer addon based on &lt;a href=&#34;https://github.com/kubernetes/contrib&#34;&gt;kubernetes/contrib/service-loadbalancer&lt;/a&gt;
+that wasn&amp;rsquo;t ready in the &lt;code&gt;0.6.3&lt;/code&gt; release.&lt;/p&gt;
+
+&lt;p&gt;Before we begin you might take a look at
+&lt;a href=&#34;https://github.com/kubernetes/contrib/tree/master/service-loadbalancer&#34;&gt;service-loadbalancer&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;What I did was to build the &lt;code&gt;service-loadbalancer&lt;/code&gt; from the
+&lt;code&gt;kubernetes/contrib master branch&lt;/code&gt;. Once again Lucas have made a great job and
+created a docker file for building the Kubernetes-ARM binaries on x86.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Clone the repository
+$ git clone https://github.com/luxas/kubernetes-on-arm
+$ # Build the Docker image
+$ cd kubernetes-on-arm/scripts/build-k8s-on-amd64
+$ docker build -t build-k8s-on-amd64 .
+$ # Create a container
+$ docker run --name=build-k8s-on-amd64 build-k8s-on-amd64 true
+$ # Copy out the binaries from the container
+$ docker cp build-k8s-on-amd64:/output .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt; binary is located in the &lt;code&gt;output&lt;/code&gt; directory.
+Transfer the file to the nodes that will have the role of load-balancer.
+e.g.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ scp ./output/service-loadbalancer \ xxx.xxx.xxx.xxx:/etc/kubernetes/source/images/kubernetesonarm/_bin/latest
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt;uses a template for creating a &lt;code&gt;ha-proxy.cfg&lt;/code&gt;.
+The template I&amp;rsquo;m using can be found here: &lt;a href=&#34;https://goo.gl/TzvKhX&#34;&gt;template.cfg&lt;/a&gt;
+On each node build the &lt;code&gt;kubernetesonarm/loadbalancer&lt;/code&gt; image.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ cd /etc/kubernetes/source/images/kubernetesonarm/loadbalancer
+$ mv template.cfg template.cfg.org
+$ wget wget https://goo.gl/TzvKhX -O template.cfg
+$ ./build.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Phew&amp;hellip; were half way. The Docker image is in place on our nodes. Now we need
+to label them so that the scheduler can place the &lt;code&gt;service-loadbalancer&lt;/code&gt; on the
+right nodes.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl label --overwrite nodes &amp;lt;node name&amp;gt; role=loadbalancer
+$ kubectl get nodes
+NAME           LABELS                                                  STATUS    AGE
+&amp;lt;node name&amp;gt;   kubernetes.io/hostname=&amp;lt;node name&amp;gt;,role=loadbalancer     Ready     2d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to create the &lt;code&gt;loadbalancer&lt;/code&gt;. If you wan&amp;rsquo;t to use &lt;code&gt;https&lt;/code&gt; you need
+to create a &lt;code&gt;secret&lt;/code&gt; and mount the volume in your pod template.
+Here&amp;rsquo;s my &lt;code&gt;loadbalancer-rc.yaml&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: service-loadbalancer
+  namespace: kube-system
+  labels:
+    app: service-loadbalancer
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    app: service-loadbalancer
+    version: v1
+  template:
+    metadata:
+      labels:
+        app: service-loadbalancer
+        version: v1
+    spec:
+      nodeSelector:
+        role: loadbalancer
+      volumes:
+      - name: ssl-volume
+        secret:
+          secretName: kodbasen-ssl-secret
+      containers:
+      - image: kubernetesonarm/loadbalancer
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        name: haproxy
+        ports:
+        # All http services
+        - containerPort: 80
+          hostPort: 80
+          protocol: TCP
+        # nginx https
+        - containerPort: 443
+          hostPort: 443
+          protocol: TCP
+        # mysql
+        - containerPort: 3306
+          hostPort: 3306
+          protocol: TCP
+        # haproxy stats
+        - containerPort: 1936
+          hostPort: 1936
+          protocol: TCP
+        # gogs ssh
+        - containerPort: 2222
+          hostPort: 2222
+          protocol: TCP
+        volumeMounts:
+        - name: ssl-volume
+          readOnly: true
+          mountPath: &amp;quot;/ssl&amp;quot;
+        resources: {}
+        args:
+        - --tcp-services=my-gogs-ssh:2222
+        - --ssl-cert=/ssl/server.pem
+        - --ssl-ca-cert=/ssl/ca.crt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;He&amp;rsquo;re you can see that I&amp;rsquo;ve exposed the &lt;code&gt;my-gogs-ssh&lt;/code&gt; as a TCP service.&lt;/p&gt;
+
+&lt;p&gt;Now we&amp;rsquo;re ready to expose our Gogs service to the outside world. We need to
+change our Gogs service from
+&lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Part 1&lt;/a&gt; slightly and add
+some annotations.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    serviceloadbalancer/lb.sslTerm: &amp;quot;true&amp;quot;
+    serviceloadbalancer/lb.host: &amp;quot;gogs.replace.me&amp;quot;
+    serviceloadbalancer/lb.cookie-sticky-session: &amp;quot;true&amp;quot;
+  labels:
+    app: my-gogs-service
+  name: my-gogs-service
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: my-gogs
+  sessionAffinity: None
+  type: ClusterIP
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.sslTerm: &amp;quot;true&amp;quot;&lt;/code&gt; annotation says that we wan&amp;rsquo;t to
+use &lt;code&gt;https&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.host: &amp;quot;gogs.replace.me&amp;quot;&lt;/code&gt; is the &lt;code&gt;virtual host&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.cookie-sticky-session: &amp;quot;true&amp;quot;&lt;/code&gt; enables sticky sessions
+between your pods (&lt;code&gt;replicas &amp;gt; 1&lt;/code&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;If everything is working you should be rewarded with a &lt;code&gt;ha-proxy&lt;/code&gt; status page
+where you can monitor your exposed services. Fire up
+&lt;code&gt;http://&amp;lt;loadbalancer ip&amp;gt;:1936/&lt;/code&gt; in your favorite browser and take a look.&lt;/p&gt;
+
+&lt;p&gt;That is all for now. In the next part we will take a look at the &lt;code&gt;CI&lt;/code&gt; tool
+&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;Drone&lt;/a&gt; and how to get it working on our
+&lt;em&gt;Kubernetes-ARM&lt;/em&gt; cluster. Prepare for a journey &lt;em&gt;down the rabbit hole&lt;/em&gt;.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Gogs and Drone On Kubernetes-ARM - Part 1</title>
@@ -29,7 +212,7 @@ and &lt;a href=&#34;https://hub.docker.com/r/hypriot/rpi-gogs-alpine/&#34;&gt;hy
 
 &lt;p&gt;Lets try it out:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl run my-gogs-service --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl run my-gogs --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
 replicationcontroller &amp;quot;my-gogs-service&amp;quot; created
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -37,12 +220,12 @@ replicationcontroller &amp;quot;my-gogs-service&amp;quot; created
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get pods
 NAME                      READY     STATUS    RESTARTS   AGE
-my-gogs-service-3adh8     1/1       Running   0          1m
+my-gogs-3adh8             1/1       Running   0          1m
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Now it&amp;rsquo;s time to expose our new pod as a service:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl expose rc my-gogs-service --port=80 --target-port=3000 --name=my-gogs-service
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl expose rc my-gogs --port=80 --target-port=3000 --name=my-gogs-service
 service &amp;quot;my-gogs-service&amp;quot; exposed
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -113,22 +296,22 @@ spec:
 kind: ReplicationController
 metadata:
   labels:
-    app: gogs
-  name: gogs
+    app: my-gogs
+  name: my-gogs
   namespace: default
 spec:
   replicas: 1
   selector:
-    app: gogs
+    app: my-gogs
   template:
     metadata:
       labels:
-        app: gogs
+        app: my-gogs
     spec:
       containers:
       - image: larmog/rpi-gogs:0.8.23.0126-2
         imagePullPolicy: IfNotPresent
-        name: gogs
+        name: my-gogs
         volumeMounts:
         - mountPath: &amp;quot;/data&amp;quot;
           name: persistentdata
@@ -158,18 +341,19 @@ list.&lt;/p&gt;
 &lt;p&gt;Let&amp;rsquo;s enjoy the fruit of our work (or as we say in Sweden: &amp;ldquo;ett Ernst ögonblick&amp;rdquo;):&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get services
-NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
-my-gogs      10.0.0.85    &amp;lt;none&amp;gt;        80/TCP     app=gogs       9d
-my-gogs-ssh  10.0.0.216   nodes         2222/TCP   app=gogs       9d
-kubernetes   10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&amp;gt;         25d
+NAME             CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+my-gogs-service  10.0.0.85    &amp;lt;none&amp;gt;        80/TCP     app=gogs       9d
+my-gogs-ssh      10.0.0.216   nodes         2222/TCP   app=gogs       9d
+kubernetes       10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&amp;gt;         25d
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Notice that I&amp;rsquo;ve also created a service for the &lt;code&gt;ssh&lt;/code&gt; port.
 Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
 and complete the installation.&lt;/p&gt;
 
-&lt;p&gt;In the next part I will explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to
-expose your services outside your cluster.&lt;/p&gt;
+&lt;p&gt;In &lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Part 2&lt;/a&gt; I will
+explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose your services outside your
+cluster.&lt;/p&gt;
 </description>
     </item>
     

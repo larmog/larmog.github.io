@@ -86,7 +86,7 @@ and <a href="https://hub.docker.com/r/hypriot/rpi-gogs-alpine/">hypriot/rpi-gogs
 
 <p>Lets try it out:</p>
 
-<pre><code class="language-shell">$ kubectl run my-gogs-service --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
+<pre><code class="language-shell">$ kubectl run my-gogs --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
 replicationcontroller &quot;my-gogs-service&quot; created
 </code></pre>
 
@@ -94,12 +94,12 @@ replicationcontroller &quot;my-gogs-service&quot; created
 
 <pre><code class="language-shell">$ kubectl get pods
 NAME                      READY     STATUS    RESTARTS   AGE
-my-gogs-service-3adh8     1/1       Running   0          1m
+my-gogs-3adh8             1/1       Running   0          1m
 </code></pre>
 
 <p>Now it&rsquo;s time to expose our new pod as a service:</p>
 
-<pre><code class="language-shell">$ kubectl expose rc my-gogs-service --port=80 --target-port=3000 --name=my-gogs-service
+<pre><code class="language-shell">$ kubectl expose rc my-gogs --port=80 --target-port=3000 --name=my-gogs-service
 service &quot;my-gogs-service&quot; exposed
 </code></pre>
 
@@ -170,22 +170,22 @@ spec:
 kind: ReplicationController
 metadata:
   labels:
-    app: gogs
-  name: gogs
+    app: my-gogs
+  name: my-gogs
   namespace: default
 spec:
   replicas: 1
   selector:
-    app: gogs
+    app: my-gogs
   template:
     metadata:
       labels:
-        app: gogs
+        app: my-gogs
     spec:
       containers:
       - image: larmog/rpi-gogs:0.8.23.0126-2
         imagePullPolicy: IfNotPresent
-        name: gogs
+        name: my-gogs
         volumeMounts:
         - mountPath: &quot;/data&quot;
           name: persistentdata
@@ -215,18 +215,19 @@ list.</p>
 <p>Let&rsquo;s enjoy the fruit of our work (or as we say in Sweden: &ldquo;ett Ernst ögonblick&rdquo;):</p>
 
 <pre><code class="language-shell">$ kubectl get services
-NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
-my-gogs      10.0.0.85    &lt;none&gt;        80/TCP     app=gogs       9d
-my-gogs-ssh  10.0.0.216   nodes         2222/TCP   app=gogs       9d
-kubernetes   10.0.0.1     &lt;none&gt;        443/TCP    &lt;none&gt;         25d
+NAME             CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+my-gogs-service  10.0.0.85    &lt;none&gt;        80/TCP     app=gogs       9d
+my-gogs-ssh      10.0.0.216   nodes         2222/TCP   app=gogs       9d
+kubernetes       10.0.0.1     &lt;none&gt;        443/TCP    &lt;none&gt;         25d
 </code></pre>
 
 <p>Notice that I&rsquo;ve also created a service for the <code>ssh</code> port.
 Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
 and complete the installation.</p>
 
-<p>In the next part I will explain how to set up <code>service-loadbalancer</code> to
-expose your services outside your cluster.</p>
+<p>In <a href="/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/">Part 2</a> I will
+explain how to set up <code>service-loadbalancer</code> to expose your services outside your
+cluster.</p>
 </p>
           <p>7 Feb 2016
             
@@ -306,7 +307,7 @@ expose your services outside your cluster.</p>
     <div class="row">
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/"><i class="mdi-navigation-arrow-back"></i></a>
       
       </div>
       <div class="col s6 m10 center">&nbsp</div>
