@@ -55,7 +55,7 @@ e.g.&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ scp ./output/service-loadbalancer \ xxx.xxx.xxx.xxx:/etc/kubernetes/source/images/kubernetesonarm/_bin/latest
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt;uses a template for creating a &lt;code&gt;ha-proxy.cfg&lt;/code&gt;.
+&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt; uses a template for creating a &lt;code&gt;ha-proxy.cfg&lt;/code&gt;.
 The template I&amp;rsquo;m using can be found here: &lt;a href=&#34;https://goo.gl/TzvKhX&#34;&gt;template.cfg&lt;/a&gt;
 On each node build the &lt;code&gt;kubernetesonarm/loadbalancer&lt;/code&gt; image.&lt;/p&gt;
 
