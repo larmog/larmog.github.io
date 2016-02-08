@@ -11,6 +11,7 @@ This is part 1 in a series of posts describing how I have setup Gogs and Drone
 on my Kubernetes-ARM cluster. [Gogs - Go Git Service](https://gogs.io/) is
 _A painless self-hosted Git service_ and is a great alternative when you can't
 use GitHub or wan't to host your own Git service.
+<!--more-->
 
 The easiest way to get started with Gogs (and of course the only alternative if
 you wan't to use Kubernetes) is to use a Docker image. Gogs has a Docker image
@@ -20,19 +21,19 @@ and [hypriot/rpi-gogs-alpine](https://hub.docker.com/r/hypriot/rpi-gogs-alpine/)
 
 Lets try it out:
 ```shell
-$ kubectl run my-gogs-service --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
+$ kubectl run my-gogs --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
 replicationcontroller "my-gogs-service" created
 ```
 Here we can see our pod is running:
 ```shell
 $ kubectl get pods
 NAME                      READY     STATUS    RESTARTS   AGE
-my-gogs-service-3adh8     1/1       Running   0          1m
+my-gogs-3adh8             1/1       Running   0          1m
 ```
 
 Now it's time to expose our new pod as a service:
 ```shell
-$ kubectl expose rc my-gogs-service --port=80 --target-port=3000 --name=my-gogs-service
+$ kubectl expose rc my-gogs --port=80 --target-port=3000 --name=my-gogs-service
 service "my-gogs-service" exposed
 ```
 
@@ -100,22 +101,22 @@ apiVersion: v1
 kind: ReplicationController
 metadata:
   labels:
-    app: gogs
-  name: gogs
+    app: my-gogs
+  name: my-gogs
   namespace: default
 spec:
   replicas: 1
   selector:
-    app: gogs
+    app: my-gogs
   template:
     metadata:
       labels:
-        app: gogs
+        app: my-gogs
     spec:
       containers:
       - image: larmog/rpi-gogs:0.8.23.0126-2
         imagePullPolicy: IfNotPresent
-        name: gogs
+        name: my-gogs
         volumeMounts:
         - mountPath: "/data"
           name: persistentdata
@@ -145,14 +146,15 @@ list.
 Let's enjoy the fruit of our work (or as we say in Sweden: "ett Ernst ögonblick"):
 ```shell
 $ kubectl get services
-NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
-my-gogs      10.0.0.85    <none>        80/TCP     app=gogs       9d
-my-gogs-ssh  10.0.0.216   nodes         2222/TCP   app=gogs       9d
-kubernetes   10.0.0.1     <none>        443/TCP    <none>         25d
+NAME             CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+my-gogs-service  10.0.0.85    <none>        80/TCP     app=gogs       9d
+my-gogs-ssh      10.0.0.216   nodes         2222/TCP   app=gogs       9d
+kubernetes       10.0.0.1     <none>        443/TCP    <none>         25d
 ```
 Notice that I've also created a service for the `ssh` port.
 Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
 and complete the installation.
 
-In the next part I will explain how to set up `service-loadbalancer` to
-expose your services outside your cluster.
+In [Part 2]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_2.md" >}}) I will
+explain how to set up `service-loadbalancer` to expose your services outside your
+cluster.
