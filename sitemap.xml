@@ -28,6 +28,11 @@
   </url>
   
   <url>
+    <loc>http://larmog.github.io/about/</loc>
+    <lastmod>2016-02-04T20:00:35+01:00</lastmod>
+  </url>
+  
+  <url>
     <loc>http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/</loc>
     <lastmod>2014-08-18T21:37:45+01:00</lastmod>
   </url>
