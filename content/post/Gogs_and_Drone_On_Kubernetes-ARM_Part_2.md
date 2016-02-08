@@ -46,7 +46,7 @@ e.g.
 ```shell
 $ scp ./output/service-loadbalancer \ xxx.xxx.xxx.xxx:/etc/kubernetes/source/images/kubernetesonarm/_bin/latest
 ```
-The `service-loadbalancer`uses a template for creating a `ha-proxy.cfg`.
+The `service-loadbalancer` uses a template for creating a `ha-proxy.cfg`.
 The template I'm using can be found here: [template.cfg](https://goo.gl/TzvKhX)
 On each node build the `kubernetesonarm/loadbalancer` image.
 ```shell
