@@ -1,6 +1,6 @@
 +++
 date = "2016-02-08T09:21:47+01:00"
-draft = true
+draft = false
 title = "Gogs and Drone On Kubernetes-ARM - Part 2"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "Gogs", "Drone"]
