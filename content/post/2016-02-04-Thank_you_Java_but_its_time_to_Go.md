@@ -12,7 +12,7 @@ But recently there's a couple of things I've been fretting about. I always been
 slow using keyboard (never learnt how to use it correctly). When programming
 that's not always a bad thing, it gives you time to think about what you're
 writing.
-But Java is very verbose and all those `private`, `pubic`, `;`, `getXXX`,
+But Java is very verbose and all those `private`, `public`, `;`, `getXXX`,
 `setXXX` kind of gets in the way.
 <!--more-->
 ```bash
