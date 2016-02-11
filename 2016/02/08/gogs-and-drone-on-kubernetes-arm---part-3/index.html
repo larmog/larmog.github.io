@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Gogs and Drone On Kubernetes-ARM - Part 3</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.png);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.png">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Gogs and Drone On Kubernetes-ARM - Part 3</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/ci/">CI</a>
+            
+          
+          </p>
+          <p>
+
+<p>This is the third part in a series on setting up Gogs and Drone on
+Kubernetes-ARM. You can find the earlier posts here:</p>
+
+<ul>
+<li><a href="/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/">Part 1</a></li>
+<li><a href="/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/">Part 2</a></li>
+<li>and <a href="/2016/02/06/kubernetes-on-arm/">Kubernetes-On-ARM</a></li>
+</ul>
+
+<p>In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
+A disclaimer, I&rsquo;m new to Drone and out on deep water so&hellip;</p>
+
+<p>If your wondering about Drone take a look at
+<a href="https://github.com/drone/drone">GitHub page</a>.</p>
+
+<p><em>&ldquo;Every build is executed inside an ephemeral Docker container, giving
+developers complete control over their build environment with guaranteed
+isolation.&rdquo;</em></p>
+
+<p>This means that the <code>build agent</code> is a container and all the plugins are also
+containers. This makes it a bit problematic running Drone on ARM because we
+need to rebuild everything, from Drone it self to all plugins that we wan&rsquo;t to
+use. We need to setup a Drone infrastructure for ARM, <strong>or so I thought&hellip;</strong></p>
+
+<h5 id="on-the-shoulder-of-others:45fd2cf7d6daaa0f28a943db69cd162c">On the shoulder of others</h5>
+
+<p>Fortunately before I jumped in to the <em>rabbit hole</em>, not knowing if it was a
+dead end, I found two different initiatives for running Drone on ARM. You can
+read more about it here:
+<a href="https://discuss.drone.io/t/drone-ported-to-arm/55">Drone ported to ARM</a></p>
+
+<p>I decided to try
+<a href="https://github.com/armhf-docker-library/drone">armhf-docker-library/drone</a> and
+I also found this example from Greg Taylor: <a href="https://github.com/drone-demos/drone-on-kubernetes/">drone-on-kubernetes</a>.</p>
+
+<h5 id="lets-get-started:45fd2cf7d6daaa0f28a943db69cd162c">Lets get started</h5>
+
+<p>First we need to create persistent volume for our sqlite database:</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-drone
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: &lt;Path exported NFS volume&gt;
+    server: &lt;IP NFS Server&gt;
+</code></pre>
+
+<p>and a volume claim:</p>
+
+<pre><code>kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-drone
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+</code></pre>
+
+<p>We can now create our replication controller:</p>
+
+<pre><code>apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    app: droneio
+  name: droneio
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    app: droneio
+  template:
+    metadata:
+      labels:
+        app: droneio
+    spec:
+      containers:
+      # Drone ARM port https://github.com/armhf-docker-library
+      - image: armhfbuild/drone:latest
+        imagePullPolicy: Always
+        name: droneio
+        ports:
+          - containerPort: 8000
+            name: web   
+            protocol: TCP
+        env:
+        - name: REMOTE_DRIVER
+          value: &quot;gogs&quot;
+        - name: REMOTE_CONFIG
+          value: &quot;https://&lt;YOUR GOGS SERVICE&gt;?skip_verify=true&amp;open=false&quot;
+        - name: DEBUG
+          value: &quot;true&quot;
+        #Drone ARM port plugins
+        - name: PLUGIN_FILTER
+          value: &quot;armhfplugins/*&quot;
+        volumeMounts:
+          - mountPath: &quot;/var/lib/drone&quot;
+            name: persistentdata
+          - mountPath: /var/run/docker.sock
+            name: docker-socket
+          - mountPath: /var/lib/docker
+            name: docker-lib
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+          - name: persistentdata
+            persistentVolumeClaim:
+              claimName: pvc-drone
+          - name: docker-socket
+            hostPath:
+              path: /var/run/docker.sock
+          - name: docker-lib
+            hostPath:
+              path: /var/lib/docker
+</code></pre>
+
+<p>Let&rsquo;s take a look at our controllers:</p>
+
+<pre><code class="language-shell">$ kubectl get rc
+CONTROLLER   CONTAINER(S)   IMAGE(S)                        SELECTOR       REPLICAS   AGE
+droneio      droneio        armhfbuild/drone:latest         app=droneio    1          2h
+gogs         gogs           larmog/rpi-gogs:0.8.23.0126-2   app=gogs       1          10d
+</code></pre>
+
+<p>Finally we create our service:</p>
+
+<pre><code>apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    # For our service-loadbalancer
+    serviceloadbalancer/lb.sslTerm: &quot;true&quot;
+    serviceloadbalancer/lb.host: &lt;virtual host&gt;
+    serviceloadbalancer/lb.cookie-sticky-session: &quot;true&quot;
+  labels:
+    app: droneio
+  name: droneio
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: droneio
+  sessionAffinity: None
+  type: ClusterIP
+</code></pre>
+
+<p>And here´s our services:</p>
+
+<pre><code class="language-shell">$ kubectl get svc
+NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+droneio      10.0.0.11    &lt;none&gt;        80/TCP     app=droneio    2h
+gogs         10.0.0.85    &lt;none&gt;        80/TCP     app=gogs       13d
+gogs-ssh     10.0.0.216   nodes         2222/TCP   app=gogs       13d
+kubernetes   10.0.0.1     &lt;none&gt;        443/TCP    &lt;none&gt;         29d
+</code></pre>
+
+<p>If all has gone according to our plan we should see the service in our
+<code>ha-proxy</code> status page, and you should be able to login with your <em>Gogs</em>
+account.</p>
+
+<h5 id="ca-and-pki-infrastructure:45fd2cf7d6daaa0f28a943db69cd162c">CA and PKI infrastructure</h5>
+
+<p>If your using your own CA and PKI infrastructure and a service-loadbalancer,
+then there is a couple of things you need to do. When you have activated a
+repository in Drone, you need to edit the Webhook that notifies Drone.
+Use the service name or the IP address of your Drone service
+(<code>droneio.&lt;namespace&gt;</code>) in Kubernetes.
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Gogs Webhook</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/gogs-webhook.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+</p>
+
+<p>There is no easy way (at least none that i know of) to add your CA certificate.
+This means that the <code>plugins/drone-git</code> will fail to clone your repository using
+<code>https</code>. It gave me a serious headache until i found a solution and I admit it&rsquo;s
+a bit of a hack.
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">drone-git failed to clone</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/drone-git-failed.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+</p>
+
+<p>You need to set <code>GIT_SSL_NO_VERIFY=true</code> in your <code>.drone.yml</code>:</p>
+
+<pre><code>clone:
+    environment:
+      - GIT_SSL_NO_VERIFY=true
+    path: /xxxx
+</code></pre>
+
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">drone-git cloned successfully</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/drone-git-success.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+
+
+<h5 id="conclusion:45fd2cf7d6daaa0f28a943db69cd162c">Conclusion</h5>
+
+<p>This concludes our series about running Gogs and Drone on Kubernetes-ARM.
+Thanks to the excellent job done by others, it is a rather straight forward
+process to set it up. I hope you liked the series and hope you&rsquo;ve picked up
+something you didn&rsquo;t know before. Now I&rsquo;m off to learn some more about <em>Drone</em>.</p>
+
+<h5 id="finally:45fd2cf7d6daaa0f28a943db69cd162c">Finally</h5>
+
+<p>Some useful links:</p>
+
+<ul>
+<li><a href="http://blog.hypriot.com/">http://blog.hypriot.com/</a></li>
+<li><a href="https://github.com/luxas/kubernetes-on-arm">https://github.com/luxas/kubernetes-on-arm</a></li>
+<li><a href="http://www.jinkit.com/k8s-on-rpi/">http://www.jinkit.com/k8s-on-rpi/</a></li>
+<li><a href="https://discuss.drone.io/t/drone-ported-to-arm/55">https://discuss.drone.io/t/drone-ported-to-arm/55</a></li>
+<li><a href="https://github.com/kelseyhightower/docker-kubernetes-tls-guide">https://github.com/kelseyhightower/docker-kubernetes-tls-guide</a></li>
+<li><a href="https://github.com/kelseyhightower/conf2kube">https://github.com/kelseyhightower/conf2kube</a></li>
+<li><a href="https://github.com/drone-demos">https://github.com/drone-demos</a></li>
+</ul>
+</p>
+          <p>8 Feb 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/gogs/">#Gogs</a>
+              
+                <a href="http://larmog.github.io//tags/drone/">#Drone</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f&text=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%203&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%203" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%203" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f&mini=true&title=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%203&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Gogs%20and%20Drone%20On%20Kubernetes-ARM%20-%20Part%203&body=http%3a%2f%2flarmog.github.io%2f2016%2f02%2f08%2fgogs-and-drone-on-kubernetes-arm---part-3%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

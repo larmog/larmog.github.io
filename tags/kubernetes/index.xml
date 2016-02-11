@@ -7,8 +7,289 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 08 Feb 2016 09:21:47 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 08 Feb 2016 16:39:34 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Gogs and Drone On Kubernetes-ARM - Part 3</title>
+      <link>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-3/</link>
+      <pubDate>Mon, 08 Feb 2016 16:39:34 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-3/</guid>
+      <description>
+
+&lt;p&gt;This is the third part in a series on setting up Gogs and Drone on
+Kubernetes-ARM. You can find the earlier posts here:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Part 2&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;and &lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
+A disclaimer, I&amp;rsquo;m new to Drone and out on deep water so&amp;hellip;&lt;/p&gt;
+
+&lt;p&gt;If your wondering about Drone take a look at
+&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;GitHub page&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;&amp;ldquo;Every build is executed inside an ephemeral Docker container, giving
+developers complete control over their build environment with guaranteed
+isolation.&amp;rdquo;&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;This means that the &lt;code&gt;build agent&lt;/code&gt; is a container and all the plugins are also
+containers. This makes it a bit problematic running Drone on ARM because we
+need to rebuild everything, from Drone it self to all plugins that we wan&amp;rsquo;t to
+use. We need to setup a Drone infrastructure for ARM, &lt;strong&gt;or so I thought&amp;hellip;&lt;/strong&gt;&lt;/p&gt;
+
+&lt;h5 id=&#34;on-the-shoulder-of-others:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;On the shoulder of others&lt;/h5&gt;
+
+&lt;p&gt;Fortunately before I jumped in to the &lt;em&gt;rabbit hole&lt;/em&gt;, not knowing if it was a
+dead end, I found two different initiatives for running Drone on ARM. You can
+read more about it here:
+&lt;a href=&#34;https://discuss.drone.io/t/drone-ported-to-arm/55&#34;&gt;Drone ported to ARM&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;I decided to try
+&lt;a href=&#34;https://github.com/armhf-docker-library/drone&#34;&gt;armhf-docker-library/drone&lt;/a&gt; and
+I also found this example from Greg Taylor: &lt;a href=&#34;https://github.com/drone-demos/drone-on-kubernetes/&#34;&gt;drone-on-kubernetes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h5 id=&#34;lets-get-started:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Lets get started&lt;/h5&gt;
+
+&lt;p&gt;First we need to create persistent volume for our sqlite database:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-drone
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: &amp;lt;Path exported NFS volume&amp;gt;
+    server: &amp;lt;IP NFS Server&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and a volume claim:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-drone
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now create our replication controller:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    app: droneio
+  name: droneio
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    app: droneio
+  template:
+    metadata:
+      labels:
+        app: droneio
+    spec:
+      containers:
+      # Drone ARM port https://github.com/armhf-docker-library
+      - image: armhfbuild/drone:latest
+        imagePullPolicy: Always
+        name: droneio
+        ports:
+          - containerPort: 8000
+            name: web   
+            protocol: TCP
+        env:
+        - name: REMOTE_DRIVER
+          value: &amp;quot;gogs&amp;quot;
+        - name: REMOTE_CONFIG
+          value: &amp;quot;https://&amp;lt;YOUR GOGS SERVICE&amp;gt;?skip_verify=true&amp;amp;open=false&amp;quot;
+        - name: DEBUG
+          value: &amp;quot;true&amp;quot;
+        #Drone ARM port plugins
+        - name: PLUGIN_FILTER
+          value: &amp;quot;armhfplugins/*&amp;quot;
+        volumeMounts:
+          - mountPath: &amp;quot;/var/lib/drone&amp;quot;
+            name: persistentdata
+          - mountPath: /var/run/docker.sock
+            name: docker-socket
+          - mountPath: /var/lib/docker
+            name: docker-lib
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+          - name: persistentdata
+            persistentVolumeClaim:
+              claimName: pvc-drone
+          - name: docker-socket
+            hostPath:
+              path: /var/run/docker.sock
+          - name: docker-lib
+            hostPath:
+              path: /var/lib/docker
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s take a look at our controllers:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get rc
+CONTROLLER   CONTAINER(S)   IMAGE(S)                        SELECTOR       REPLICAS   AGE
+droneio      droneio        armhfbuild/drone:latest         app=droneio    1          2h
+gogs         gogs           larmog/rpi-gogs:0.8.23.0126-2   app=gogs       1          10d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finally we create our service:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    # For our service-loadbalancer
+    serviceloadbalancer/lb.sslTerm: &amp;quot;true&amp;quot;
+    serviceloadbalancer/lb.host: &amp;lt;virtual host&amp;gt;
+    serviceloadbalancer/lb.cookie-sticky-session: &amp;quot;true&amp;quot;
+  labels:
+    app: droneio
+  name: droneio
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: droneio
+  sessionAffinity: None
+  type: ClusterIP
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And here´s our services:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get svc
+NAME         CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
+droneio      10.0.0.11    &amp;lt;none&amp;gt;        80/TCP     app=droneio    2h
+gogs         10.0.0.85    &amp;lt;none&amp;gt;        80/TCP     app=gogs       13d
+gogs-ssh     10.0.0.216   nodes         2222/TCP   app=gogs       13d
+kubernetes   10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&amp;gt;         29d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If all has gone according to our plan we should see the service in our
+&lt;code&gt;ha-proxy&lt;/code&gt; status page, and you should be able to login with your &lt;em&gt;Gogs&lt;/em&gt;
+account.&lt;/p&gt;
+
+&lt;h5 id=&#34;ca-and-pki-infrastructure:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;CA and PKI infrastructure&lt;/h5&gt;
+
+&lt;p&gt;If your using your own CA and PKI infrastructure and a service-loadbalancer,
+then there is a couple of things you need to do. When you have activated a
+repository in Drone, you need to edit the Webhook that notifies Drone.
+Use the service name or the IP address of your Drone service
+(&lt;code&gt;droneio.&amp;lt;namespace&amp;gt;&lt;/code&gt;) in Kubernetes.
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Gogs Webhook&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/gogs-webhook.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;p&gt;There is no easy way (at least none that i know of) to add your CA certificate.
+This means that the &lt;code&gt;plugins/drone-git&lt;/code&gt; will fail to clone your repository using
+&lt;code&gt;https&lt;/code&gt;. It gave me a serious headache until i found a solution and I admit it&amp;rsquo;s
+a bit of a hack.
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;drone-git failed to clone&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/drone-git-failed.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;p&gt;You need to set &lt;code&gt;GIT_SSL_NO_VERIFY=true&lt;/code&gt; in your &lt;code&gt;.drone.yml&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;clone:
+    environment:
+      - GIT_SSL_NO_VERIFY=true
+    path: /xxxx
+&lt;/code&gt;&lt;/pre&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;drone-git cloned successfully&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/drone-git-success.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;h5 id=&#34;conclusion:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Conclusion&lt;/h5&gt;
+
+&lt;p&gt;This concludes our series about running Gogs and Drone on Kubernetes-ARM.
+Thanks to the excellent job done by others, it is a rather straight forward
+process to set it up. I hope you liked the series and hope you&amp;rsquo;ve picked up
+something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some more about &lt;em&gt;Drone&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h5 id=&#34;finally:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Finally&lt;/h5&gt;
+
+&lt;p&gt;Some useful links:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;http://blog.hypriot.com/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;https://github.com/luxas/kubernetes-on-arm&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.jinkit.com/k8s-on-rpi/&#34;&gt;http://www.jinkit.com/k8s-on-rpi/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://discuss.drone.io/t/drone-ported-to-arm/55&#34;&gt;https://discuss.drone.io/t/drone-ported-to-arm/55&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&#34;&gt;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/conf2kube&#34;&gt;https://github.com/kelseyhightower/conf2kube&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/drone-demos&#34;&gt;https://github.com/drone-demos&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>Gogs and Drone On Kubernetes-ARM - Part 2</title>
