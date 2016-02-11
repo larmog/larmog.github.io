@@ -17,6 +17,7 @@ Kubernetes-ARM. You can find the earlier posts here:
 
 In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
 A disclaimer, I'm new to Drone and out on deep water so...
+<!--more-->
 
 If your wondering about Drone take a look at
 [GitHub page](https://github.com/drone/drone).
