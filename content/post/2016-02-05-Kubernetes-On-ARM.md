@@ -9,7 +9,7 @@ categories = [ "Development", "Docker" ]
 
 I really like Kubernetes for orchestrating Docker containers. If you're don't
 familiar with Kubernetes I can highly recommend to take a look at
-(http://kubernetes.io).
+[kubernetes.io](http://kubernetes.io).
 <!--more-->
 
 You can easily run you're own Kubernetes cluster on your local machine using

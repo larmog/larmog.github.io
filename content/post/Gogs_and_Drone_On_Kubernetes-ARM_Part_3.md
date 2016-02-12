@@ -11,9 +11,10 @@ categories = [ "Development", "Kubernetes", "Docker", "CI" ]
 This is the third part in a series on setting up Gogs and Drone on
 Kubernetes-ARM. You can find the earlier posts here:
 
-* [Part 1]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_1.md" >}})
-* [Part 2]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_2.md" >}})
-* and [Kubernetes-On-ARM]({{< relref "2016-02-05-Kubernetes-On-ARM.md" >}})
+* [Kubernetes-On-ARM]({{< relref "2016-02-05-Kubernetes-On-ARM.md" >}})
+* [Gogs and Drone ... Part 1]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_1.md" >}})
+* [Gogs and Drone ... Part 2]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_2.md" >}})
+
 
 In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
 A disclaimer, I'm new to Drone and out on deep water so...
