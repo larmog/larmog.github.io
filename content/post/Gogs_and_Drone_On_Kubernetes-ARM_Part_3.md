@@ -186,13 +186,13 @@ then there is a couple of things you need to do. When you have activated a
 repository in Drone, you need to edit the Webhook that notifies Drone.
 Use the service name or the IP address of your Drone service
 (`droneio.<namespace>`) in Kubernetes.
-{{< img src="/media/gogs-webhook.png" title="Gogs Webhook" >}}
+{{< img src="/media/gogs-webhook.jpg" title="Gogs Webhook" >}}
 
 There is no easy way (at least none that i know of) to add your CA certificate.
 This means that the `plugins/drone-git` will fail to clone your repository using
 `https`. It gave me a serious headache until i found a solution and I admit it's
 a bit of a hack.
-{{< img src="/media/drone-git-failed.png" title="drone-git failed to clone" >}}
+{{< img src="/media/drone-git-failed.jpg" title="drone-git failed to clone" >}}
 
 You need to set `GIT_SSL_NO_VERIFY=true` in your `.drone.yml`:
 ```
@@ -201,7 +201,7 @@ clone:
       - GIT_SSL_NO_VERIFY=true
     path: /xxxx
 ```
-{{< img src="/media/drone-git-success.png" title="drone-git cloned successfully" >}}
+{{< img src="/media/drone-git-success.jpg" title="drone-git cloned successfully" >}}
 
 ##### Conclusion
 This concludes our series about running Gogs and Drone on Kubernetes-ARM.

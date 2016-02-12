@@ -11,8 +11,8 @@ copyright = "Copyright © 2016 by larmog"
   twitter = "larmog" # optional
   github = "larmog" # optional
   linkedin = "larmog" # optional
-  headerCover = "images/kodbasenCover.png" # optional
-  footerCover = "images/kodbasenCover.png" # optional
+  headerCover = "images/kodbasenCover.jpg" # optional
+  footerCover = "images/kodbasenCover.jpg" # optional
   googleAnalyticsUserID = "UA-73372924-1"
 
 [permalinks]
