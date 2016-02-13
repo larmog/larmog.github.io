@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Disclaimer on kodbasen</title>
+    <link>http://larmog.github.io/tags/disclaimer/</link>
+    <description>Recent content in Disclaimer on kodbasen</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Copyright © 2016 by larmog</copyright>
+    <lastBuildDate>Thu, 04 Feb 2016 20:00:35 +0100</lastBuildDate>
+    <atom:link href="http://larmog.github.io/tags/disclaimer/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>About</title>
+      <link>http://larmog.github.io/about/</link>
+      <pubDate>Thu, 04 Feb 2016 20:00:35 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/about/</guid>
+      <description>
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Lars Mogren - Norrköping, Sweden&lt;/span&gt;
+          &lt;p&gt;
+          Test infected Agile Software Developer and Architect. Currently working on Microservices, Docker and Kubernetes.
+          
+              
+          
+        &lt;/p&gt; 
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/portrait.png&#34; alt=&#34;Test infected Agile Software Developer and Architect. Currently working on Microservices, Docker and Kubernetes.&#34; /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;h5 id=&#34;disclaimer-notice:6083a88ee3411b0d17ce02d738f69d47&#34;&gt;Disclaimer Notice&lt;/h5&gt;
+
+&lt;p&gt;The opinions expressed here are the views of the author and do not reflect the views and opinions of any employer or customer of the author.&lt;/p&gt;
+
+&lt;p&gt;While every effort is made to ensure that the content of this website is accurate, the website is provided “as is” and &lt;em&gt;Kodbasen&lt;/em&gt; makes no representations or warranties in relation to the accuracy or completeness of the information found on it.  While the content of this site is provided in good faith, &lt;em&gt;Kodbasen&lt;/em&gt; do not warrant that the information will be kept up to date, be true and not misleading, or that this site will always (or ever) be available for use.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
