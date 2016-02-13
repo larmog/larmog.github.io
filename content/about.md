@@ -3,10 +3,10 @@ date = "2016-02-04T20:00:35+01:00"
 draft = false
 title = "About"
 tags = [ "About", "Disclaimer"]
-categories = [ "About", "Disclaimer Notice" ]
+categories = []
 +++
 
-{{< img src="/media/portrait.png" title="Lars Mogren - Norrköping, Sweden" caption="Test infected Agile Software Developer and Architect. Currently working on Microservices, Docker and Kubernetes." >}}
+{{< img src="/media/portrait.png" title="Lars Mogren - Norrköping, Sweden" caption="Test infected Agile Software Developer and Architect." >}}
 
 ##### Disclaimer Notice
 The opinions expressed here are the views of the author and do not reflect the views and opinions of any employer or customer of the author.
