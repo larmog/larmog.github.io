@@ -8,8 +8,9 @@ categories = [ "Development", "Kubernetes", "Docker" ]
 +++
 
 If you followed my earlier posts, you know that I’m running a Kubernetes cluster
-on Raspberry Pi, using __HypriotOS__ and Lucas Käldströms [Kubernetes-On-ARM](https://github.com/luxas/kubernetes-on-arm) project. If not
-you can find my earlier posts here:
+on Raspberry Pi, using __HypriotOS__ and Lucas Käldströms [Kubernetes-On-ARM](https://github.com/luxas/kubernetes-on-arm) project.
+<!--more-->
+If not you can find my earlier posts here:
 
 * [Kubernetes-On-ARM]({{< relref "2016-02-05-Kubernetes-On-ARM.md" >}})
 * [Gogs and Drone On Kubernetes-ARM - Part 1]({{< relref "Gogs_and_Drone_On_Kubernetes-ARM_Part_1.md" >}})
