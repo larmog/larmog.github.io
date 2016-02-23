@@ -7,8 +7,176 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sat, 13 Feb 2016 11:50:12 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 22 Feb 2016 09:35:30 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/raspberry-pi/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>GlusterFS On Kubernetes ARM</title>
+      <link>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</link>
+      <pubDate>Mon, 22 Feb 2016 09:35:30 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</guid>
+      <description>&lt;p&gt;If you followed my earlier posts, you know that I’m running a Kubernetes cluster
+on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project. If not
+you can find my earlier posts here:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Gogs and Drone On Kubernetes-ARM - Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Gogs and Drone On Kubernetes-ARM - Part 2&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-3/&#34;&gt;Gogs and Drone On Kubernetes-ARM - Part 3&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I&amp;rsquo;ve used &lt;strong&gt;NFS&lt;/strong&gt; volumes for storage and DiskStation NAS as NFS server.
+The solution have had some drawbacks and it&amp;rsquo;s been hard to synchronize users and
+groups, and I&amp;rsquo;ve used &lt;code&gt;all_squash&lt;/code&gt; to a specific &lt;code&gt;uid&lt;/code&gt;. That worked for &lt;strong&gt;Gogs&lt;/strong&gt;
+and &lt;strong&gt;Drone&lt;/strong&gt; but not for &lt;strong&gt;MySQL&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Another alternative is to use &lt;strong&gt;GlusterFS&lt;/strong&gt; volumes. GlusterFS is a clustered
+file-system that is capable of scaling to several peta-bytes.
+GlusterFS aggregates storage bricks, that can be made of commodity hardware.
+When I started this project, I had two
+&lt;code&gt;Raspberry Pi 1 B+&lt;/code&gt; in my desk drawer. I&amp;rsquo;ve used them as nodes in the cluster,
+but the small amount of &lt;code&gt;RAM&lt;/code&gt; has shown them less useful compared to the newer
+&lt;code&gt;Raspberry Pi 2 B&lt;/code&gt; based nodes. But then it hit me that maybe I could use the
+old Pi 1 boards as bricks in GlusterFS. One of the purposes with this project is
+to see how much of a Kubernetes cluster you can get for a reasonable amount. So
+I&amp;rsquo;d like to keep a tight budget. Normally when setting up a brick you want to
+use RAID, because you don&amp;rsquo;t want to handle disk failures on a brick level, but
+for this project it&amp;rsquo;s a reasonable solution.&lt;/p&gt;
+
+&lt;p&gt;After a trip to my local Electronic Retailers I came home with this
+(not the cluster):
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;GlusterFS ingredients&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/IMG_1953.jpg&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;* 2 WD external usb harddrives&lt;/li&gt;
+&lt;li&gt;* 2 Raspberry Pi 2 B boards (to replace the Pi 1:s)&lt;/li&gt;
+&lt;li&gt;* 2 SD cards&lt;/li&gt;
+&lt;li&gt;* One more Multi-Pi Stackable Raspberry Pi Case&lt;/li&gt;
+&lt;li&gt;* Cables&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;My first attempt was to connect the external drives to the usb port. That didn&amp;rsquo;t
+work of course, external disks needs more power than what the Pi usb port can
+deliver. There are two alternatives for solving this. You could use an external
+usb-hub with it&amp;rsquo;s own power supply. But that means two usb-hubs and two power
+adapters. The other alternative is to use a usb Y-cable and connect the extra
+connector to the usb supercharger (that powers all nodes). After one more trip
+to the store to get a Y-cable and then connect it to the usb supercharger, the
+problem was solved.&lt;/p&gt;
+
+&lt;p&gt;The image shows the cluster after assembling.
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Cluster ready for GlusterFS&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/IMG_1961.jpg&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;p&gt;There&amp;rsquo;s room for two more Pi:s in the switch and usb supercharger.&lt;/p&gt;
+
+&lt;p&gt;Next step was to partition and format the disks:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Prepare your disk and create a partition first
+$ # Install xfs tools
+$ apt-get install -y xfsprogs
+$ # Format the disk
+$ mkfs.xfs -f -L brick1 -i size=512 /dev/sda1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip; and mount and install &lt;code&gt;glusterfs&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Create and mount the brick
+$ mkdir -p /data/brick1
+$ echo &#39;/dev/sda1 /data/brick1 xfs defaults 1 2&#39; &amp;gt;&amp;gt; /etc/fstab
+$ cat /etc/mtab
+# Install GlusterFS server
+$ apt-get install -y glusterfs-server
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The steps above was made on both servers.&lt;/p&gt;
+
+&lt;p&gt;Next we needed to connect our storage servers:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ #From server1
+$ gluster peer probe server2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ #From server2
+$ gluster peer probe server1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Time to create the first volume:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ mkdir /data/brick1/vol0
+$ gluster volume create vol0 replica 2 store1.local:/data/brick1/vol0 store2.local:/data/brick2/vol0
+$ gluster volume start vol0
+$ gluster volume info
+$ gluster volume info
+
+Volume Name: vol0
+Type: Replicate
+Volume ID: 6ffe7723-e0ac-44c7-a004-fa951467884d
+Status: Started
+Number of Bricks: 1 x 2 = 2
+Transport-type: tcp
+Bricks:
+Brick1: server1:/data/brick1/vol0
+Brick2: server2:/data/brick2/vol0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And we&amp;rsquo;re done.&lt;/p&gt;
+
+&lt;p&gt;The only thing left is to set up our &lt;code&gt;glusterfs-cluster endpoints&lt;/code&gt; as described
+in the &lt;a href=&#34;http://kubernetes.io/v1.1/examples/glusterfs/README.html&#34;&gt;Kubernetes documentation for GlusterFS Volumes&lt;/a&gt; and configure
+our &lt;a href=&#34;http://kubernetes.io/v1.1/docs/user-guide/persistent-volumes.html&#34;&gt;Persistent Volumes and Claims&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Migrating the volumes from NFS to GlusterFS was very easy. The only problem
+I&amp;rsquo;ve had was a silly mistake. Coming from NFS I first tried to share a volume
+between applications, using different paths: &lt;code&gt;/vol 0/mysql&lt;/code&gt;, &lt;code&gt;/vol/drone&lt;/code&gt; that
+didn&amp;rsquo;t work. You need to create different volumes for each application. Except
+from the small misconception, there&amp;rsquo;s been no problems at all.&lt;/p&gt;
+
+&lt;p&gt;Now finally I have a Kubernetes cluster running on bare metal that can be used
+for trying out techniques, for building microservices.&lt;/p&gt;
+
+&lt;p&gt;By the way, I took the opportunity to overclock my Raspberry Pi:s.
+Thanks to &lt;a href=&#34;http://haydenjames.io/raspberry-pi-2-overclock/&#34;&gt;Hayden James&lt;/a&gt;, all
+cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Dashboard on Kubernetes ARM</title>

@@ -3,8 +3,13 @@
   
   <url>
     <loc>http://larmog.github.io/</loc>
-    <lastmod>2016-02-13T11:50:12+01:00</lastmod>
+    <lastmod>2016-02-22T09:35:30+01:00</lastmod>
     <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</loc>
+    <lastmod>2016-02-22T09:35:30+01:00</lastmod>
   </url>
   
   <url>
