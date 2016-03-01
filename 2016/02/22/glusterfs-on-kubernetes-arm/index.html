@@ -178,7 +178,7 @@ $ mkfs.xfs -f -L brick1 -i size=512 /dev/sda1
 <pre><code class="language-shell">$ # Create and mount the brick
 $ mkdir -p /data/brick1
 $ echo '/dev/sda1 /data/brick1 xfs defaults 1 2' &gt;&gt; /etc/fstab
-$ cat /etc/mtab
+$ mount -a &amp;&amp; mount
 # Install GlusterFS server
 $ apt-get install -y glusterfs-server
 </code></pre>
@@ -203,7 +203,6 @@ $ gluster peer probe server1
 $ gluster volume create vol0 replica 2 store1.local:/data/brick1/vol0 store2.local:/data/brick2/vol0
 $ gluster volume start vol0
 $ gluster volume info
-$ gluster volume info
 
 Volume Name: vol0
 Type: Replicate
@@ -214,6 +213,11 @@ Transport-type: tcp
 Bricks:
 Brick1: server1:/data/brick1/vol0
 Brick2: server2:/data/brick2/vol0
+</code></pre>
+
+<p>Next you need to install <code>glusterfs-client</code> on all your Kubernetes nodes:</p>
+
+<pre><code class="language-shell">$ apt-get install -y glusterfs-client
 </code></pre>
 
 <p>And we&rsquo;re done.</p>
