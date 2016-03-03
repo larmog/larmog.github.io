@@ -7,8 +7,132 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 22 Feb 2016 09:35:30 +0100</lastBuildDate>
+    <lastBuildDate>Thu, 03 Mar 2016 09:12:49 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Nothing for the faint hearted</title>
+      <link>http://larmog.github.io/2016/03/03/nothing-for-the-faint-hearted/</link>
+      <pubDate>Thu, 03 Mar 2016 09:12:49 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/03/03/nothing-for-the-faint-hearted/</guid>
+      <description>
+
+&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
+try to summarize my experiences. If you followed my earlier posts, then you know
+that I&amp;rsquo;m running &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs&lt;/a&gt; and
+&lt;a href=&#34;https://github.com/drone&#34;&gt;Drone&lt;/a&gt; on a Kubernetes cluster with
+&lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; for storing. I’m using &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;
+on &lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;HypriotOS&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;In this post I will try to summarize my experiences so far.&lt;/p&gt;
+
+&lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
+
+&lt;p&gt;One of the reasons that I wanted to run Drone was it’s use of Docker, and to
+build and push docker images to a registry. Drone has a plugin that does all
+that and uses &lt;code&gt;dind&lt;/code&gt; (Docker in Docker).&lt;/p&gt;
+
+&lt;p&gt;The examples and &lt;a href=&#34;https://github.com/drone-plugins/drone-docker/blob/master/DOCS.md&#34;&gt;documentation&lt;/a&gt;
+is rather straightforward, nothing complicated. You need to install and setup
+the &lt;a href=&#34;http://readme.drone.io/devs/cli/&#34;&gt;client&lt;/a&gt;, and setup your
+&lt;a href=&#34;http://readme.drone.io/usage/secrets/&#34;&gt;secrets&lt;/a&gt; so that you don’t store your
+username and password in your build file.&lt;/p&gt;
+
+&lt;p&gt;There was only one problem, it didn&amp;rsquo;t work …&lt;/p&gt;
+
+&lt;p&gt;I could not get the plugin to work. After turning on &lt;code&gt;DEBUG&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# .drone.yml
+...
+publish:
+  docker:
+    environment:
+    - DOCKER_LAUNCH_DEBUG=true
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I could see this error message:
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Drone Docker plugin DEBUG&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/drone-log.jpg&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;p&gt;It gave me a real headache and finally, after some googling, I found these
+issues:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/drone/drone/issues/1352&#34;&gt;https://github.com/drone/drone/issues/1352&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/20671&#34;&gt;https://github.com/kubernetes/kubernetes/issues/20671&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/18202&#34;&gt;https://github.com/kubernetes/kubernetes/issues/18202&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The &lt;code&gt;kubelet&lt;/code&gt; is causing the &lt;code&gt;/sys/fs/docker&lt;/code&gt; file-system to becoming read-only,
+this will hopefully be resolved in Kubernetes 1.2. Meantime, the solution is,
+to remove one of the nodes from the Kubernetes cluster and use it as a remote
+worker-node in Drone.&lt;/p&gt;
+
+&lt;h5 id=&#34;containerized-kubelet:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Containerized Kubelet&lt;/h5&gt;
+
+&lt;p&gt;There are issues, when running the &lt;code&gt;kubelet&lt;/code&gt; in a container, and is work in
+progress, to resolve those issues.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/4869&#34;&gt;https://github.com/kubernetes/kubernetes/issues/4869&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/14403&#34;&gt;https://github.com/kubernetes/kubernetes/issues/14403&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h5 id=&#34;glusterfs-usb-and-100mbit-ethernet-network:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Glusterfs USB and 100Mbit/Ethernet network&lt;/h5&gt;
+
+&lt;p&gt;I’ve been wanting to try out &lt;a href=&#34;http://go.cd&#34;&gt;Go CD&lt;/a&gt; for some time now, and try to set up a pipeline on Kubernetes. If you take a look at the &lt;a href=&#34;https://docs.go.cd/current/installation/system_requirements.html&#34;&gt;system requirements&lt;/a&gt; for Go CD, you will see that this is not suitable for a Raspberry Pi. The Go Server is a giant monolith, but what the heck, sometimes you need to check out the limit. I created a Docker image for ARM and tried to start up a pod.&lt;/p&gt;
+
+&lt;p&gt;I got the machine started, but it took an hour. Most of the cpu-time during
+start was spent on &lt;code&gt;glusterfs&lt;/code&gt;. The &lt;em&gt;Go CD&lt;/em&gt; server uses a lot of I/O during
+start and I measured the read/write speed on the glusterfs to around 1,5-2 MB/s.
+One should not expect any great performance when running &lt;code&gt;glusterfs&lt;/code&gt; on
+&lt;em&gt;Raspberry Pi&lt;/em&gt;. There are some real bottlenecks on network and USB.&lt;/p&gt;
+
+&lt;h5 id=&#34;upgrading-to-docker-v1-10-2:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Upgrading to Docker v1.10.2&lt;/h5&gt;
+
+&lt;p&gt;The &lt;em&gt;Hypriot&lt;/em&gt; team has written a post about &lt;a href=&#34;http://blog.hypriot.com/post/test-build-and-package-docker-for-arm-the-official-way/&#34;&gt;Test, build and package Docker for ARM the official way&lt;/a&gt;.
+That was one of reasons why I wanted to upgrade Docker to &lt;code&gt;v1.10.2&lt;/code&gt;.
+But has shown to have some issues. The &lt;code&gt;kubectl exec&lt;/code&gt; command doesn’t work
+anymore and is reported here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/20884&#34;&gt;https://github.com/kubernetes/kubernetes/issues/20884&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;and is a duplicate of:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/19720&#34;&gt;https://github.com/kubernetes/kubernetes/issues/19720&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/fsouza/go-dockerclient/issues/455&#34;&gt;https://github.com/fsouza/go-dockerclient/issues/455&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h5 id=&#34;summarize:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Summarize&lt;/h5&gt;
+
+&lt;p&gt;Running &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; is nothing for the &lt;em&gt;faint hearted&lt;/em&gt;. There are some
+issues that hopefully will be resolved in a near future. I’m still very pleased
+with the cluster and it’s a great environment for building &lt;em&gt;microservices&lt;/em&gt; and
+validating your system architecture. For instance, it’s not possible to build a
+big monolith. If your system runs and scales on Kubernetes-On-ARM
+(built on Raspberry Pi) then you can be sure of that it runs and scales on any
+platform.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>GlusterFS On Kubernetes ARM</title>

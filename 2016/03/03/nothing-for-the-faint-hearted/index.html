@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Nothing for the faint hearted</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Nothing for the faint hearted</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+          
+          </p>
+          <p>
+
+<p>I’ve been running my <em>Kubernetes-On-ARM</em> cluster a couple of weeks now and I’ll
+try to summarize my experiences. If you followed my earlier posts, then you know
+that I&rsquo;m running <a href="https://gogs.io/">Gogs</a> and
+<a href="https://github.com/drone">Drone</a> on a Kubernetes cluster with
+<a href="https://www.gluster.org/">GlusterFS</a> for storing. I’m using <a href="https://github.com/luxas/kubernetes-on-arm">Kubernetes-On-ARM</a>
+on <a href="http://blog.hypriot.com/">HypriotOS</a>.</p>
+
+<p>In this post I will try to summarize my experiences so far.</p>
+
+<h5 id="dind-and-kubelet-does-not-play-well-together:38dbe607a3f0a33b702c4d61c17d021b">Dind and Kubelet does not play well together</h5>
+
+<p>One of the reasons that I wanted to run Drone was it’s use of Docker, and to
+build and push docker images to a registry. Drone has a plugin that does all
+that and uses <code>dind</code> (Docker in Docker).</p>
+
+<p>The examples and <a href="https://github.com/drone-plugins/drone-docker/blob/master/DOCS.md">documentation</a>
+is rather straightforward, nothing complicated. You need to install and setup
+the <a href="http://readme.drone.io/devs/cli/">client</a>, and setup your
+<a href="http://readme.drone.io/usage/secrets/">secrets</a> so that you don’t store your
+username and password in your build file.</p>
+
+<p>There was only one problem, it didn&rsquo;t work …</p>
+
+<p>I could not get the plugin to work. After turning on <code>DEBUG</code>:</p>
+
+<pre><code># .drone.yml
+...
+publish:
+  docker:
+    environment:
+    - DOCKER_LAUNCH_DEBUG=true
+...
+</code></pre>
+
+<p>I could see this error message:
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Drone Docker plugin DEBUG</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/drone-log.jpg"  />
+      
+    </div>
+  </div>
+</figure>
+
+</p>
+
+<p>It gave me a real headache and finally, after some googling, I found these
+issues:</p>
+
+<ul>
+<li><a href="https://github.com/drone/drone/issues/1352">https://github.com/drone/drone/issues/1352</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/20671">https://github.com/kubernetes/kubernetes/issues/20671</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/18202">https://github.com/kubernetes/kubernetes/issues/18202</a></li>
+</ul>
+
+<p>The <code>kubelet</code> is causing the <code>/sys/fs/docker</code> file-system to becoming read-only,
+this will hopefully be resolved in Kubernetes 1.2. Meantime, the solution is,
+to remove one of the nodes from the Kubernetes cluster and use it as a remote
+worker-node in Drone.</p>
+
+<h5 id="containerized-kubelet:38dbe607a3f0a33b702c4d61c17d021b">Containerized Kubelet</h5>
+
+<p>There are issues, when running the <code>kubelet</code> in a container, and is work in
+progress, to resolve those issues.</p>
+
+<ul>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/4869">https://github.com/kubernetes/kubernetes/issues/4869</a></li>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/14403">https://github.com/kubernetes/kubernetes/issues/14403</a></li>
+</ul>
+
+<h5 id="glusterfs-usb-and-100mbit-ethernet-network:38dbe607a3f0a33b702c4d61c17d021b">Glusterfs USB and 100Mbit/Ethernet network</h5>
+
+<p>I’ve been wanting to try out <a href="http://go.cd">Go CD</a> for some time now, and try to set up a pipeline on Kubernetes. If you take a look at the <a href="https://docs.go.cd/current/installation/system_requirements.html">system requirements</a> for Go CD, you will see that this is not suitable for a Raspberry Pi. The Go Server is a giant monolith, but what the heck, sometimes you need to check out the limit. I created a Docker image for ARM and tried to start up a pod.</p>
+
+<p>I got the machine started, but it took an hour. Most of the cpu-time during
+start was spent on <code>glusterfs</code>. The <em>Go CD</em> server uses a lot of I/O during
+start and I measured the read/write speed on the glusterfs to around 1,5-2 MB/s.
+One should not expect any great performance when running <code>glusterfs</code> on
+<em>Raspberry Pi</em>. There are some real bottlenecks on network and USB.</p>
+
+<h5 id="upgrading-to-docker-v1-10-2:38dbe607a3f0a33b702c4d61c17d021b">Upgrading to Docker v1.10.2</h5>
+
+<p>The <em>Hypriot</em> team has written a post about <a href="http://blog.hypriot.com/post/test-build-and-package-docker-for-arm-the-official-way/">Test, build and package Docker for ARM the official way</a>.
+That was one of reasons why I wanted to upgrade Docker to <code>v1.10.2</code>.
+But has shown to have some issues. The <code>kubectl exec</code> command doesn’t work
+anymore and is reported here:</p>
+
+<p><a href="https://github.com/kubernetes/kubernetes/issues/20884">https://github.com/kubernetes/kubernetes/issues/20884</a></p>
+
+<p>and is a duplicate of:</p>
+
+<ul>
+<li><a href="https://github.com/kubernetes/kubernetes/issues/19720">https://github.com/kubernetes/kubernetes/issues/19720</a></li>
+<li><a href="https://github.com/fsouza/go-dockerclient/issues/455">https://github.com/fsouza/go-dockerclient/issues/455</a></li>
+</ul>
+
+<h5 id="summarize:38dbe607a3f0a33b702c4d61c17d021b">Summarize</h5>
+
+<p>Running <em>Kubernetes-On-ARM</em> is nothing for the <em>faint hearted</em>. There are some
+issues that hopefully will be resolved in a near future. I’m still very pleased
+with the cluster and it’s a great environment for building <em>microservices</em> and
+validating your system architecture. For instance, it’s not possible to build a
+big monolith. If your system runs and scales on Kubernetes-On-ARM
+(built on Raspberry Pi) then you can be sure of that it runs and scales on any
+platform.</p>
+</p>
+          <p>3 Mar 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/glusterfs/">#GlusterFS</a>
+              
+                <a href="http://larmog.github.io//tags/gogs/">#Gogs</a>
+              
+                <a href="http://larmog.github.io//tags/drone/">#Drone</a>
+              
+                <a href="http://larmog.github.io//tags/arm/">#ARM</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f&text=Nothing%20for%20the%20faint%20hearted&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f&title=Nothing%20for%20the%20faint%20hearted" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f&title=Nothing%20for%20the%20faint%20hearted" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f&mini=true&title=Nothing%20for%20the%20faint%20hearted&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Nothing%20for%20the%20faint%20hearted&body=http%3a%2f%2flarmog.github.io%2f2016%2f03%2f03%2fnothing-for-the-faint-hearted%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+
