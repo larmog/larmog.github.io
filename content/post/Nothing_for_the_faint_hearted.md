@@ -90,10 +90,10 @@ and is a duplicate of:
 
 ##### Summarize
 
-Running _Kubernetes-On-ARM_ is nothing for the _faint hearted_. There are some
-issues that hopefully will be resolved in a near future. I’m still very pleased
-with the cluster and it’s a great environment for building _microservices_ and
-validating your system architecture. For instance, it’s not possible to build a
-big monolith. If your system runs and scales on Kubernetes-On-ARM
-(built on Raspberry Pi) then you can be sure of that it runs and scales on any
-platform.
+Running _Kubernetes-On-ARM_ together with new releases of _Docker_ is nothing
+for the faint hearted. There are some issues that hopefully will be resolved in
+a near future. I’m still very pleased with the cluster and it’s a great
+environment for building _microservices_ and validating your system
+architecture. For instance, it’s not possible to build a big monolith.
+If your system runs and scales on Kubernetes-On-ARM (built on Raspberry Pi)
+then you can be sure of that it runs and scales on any platform.
