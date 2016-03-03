@@ -158,8 +158,8 @@ progress, to resolve those issues.</p>
 
 <p>I’ve been wanting to try out <a href="http://go.cd">Go CD</a> for some time now, and try to set up a pipeline on Kubernetes. If you take a look at the <a href="https://docs.go.cd/current/installation/system_requirements.html">system requirements</a> for Go CD, you will see that this is not suitable for a Raspberry Pi. The Go Server is a giant monolith, but what the heck, sometimes you need to check out the limit. I created a Docker image for ARM and tried to start up a pod.</p>
 
-<p>I got the machine started, but it took an hour. Most of the cpu-time during
-start was spent on <code>glusterfs</code>. The <em>Go CD</em> server uses a lot of I/O during
+<p>I got the <em>GO CD Server</em> started, but it took an hour. Most of the cpu-time during
+start was spent on <code>glusterfs</code>. The <em>GO CD Server</em> uses a lot of I/O during
 start and I measured the read/write speed on the glusterfs to around 1,5-2 MB/s.
 One should not expect any great performance when running <code>glusterfs</code> on
 <em>Raspberry Pi</em>. There are some real bottlenecks on network and USB.</p>
