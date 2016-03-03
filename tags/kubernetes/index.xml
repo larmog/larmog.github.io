@@ -124,13 +124,13 @@ anymore and is reported here:&lt;/p&gt;
 
 &lt;h5 id=&#34;summarize:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Summarize&lt;/h5&gt;
 
-&lt;p&gt;Running &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; is nothing for the &lt;em&gt;faint hearted&lt;/em&gt;. There are some
-issues that hopefully will be resolved in a near future. I’m still very pleased
-with the cluster and it’s a great environment for building &lt;em&gt;microservices&lt;/em&gt; and
-validating your system architecture. For instance, it’s not possible to build a
-big monolith. If your system runs and scales on Kubernetes-On-ARM
-(built on Raspberry Pi) then you can be sure of that it runs and scales on any
-platform.&lt;/p&gt;
+&lt;p&gt;Running &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; together with new releases of &lt;em&gt;Docker&lt;/em&gt; is nothing
+for the faint hearted. There are some issues that hopefully will be resolved in
+a near future. I’m still very pleased with the cluster and it’s a great
+environment for building &lt;em&gt;microservices&lt;/em&gt; and validating your system
+architecture. For instance, it’s not possible to build a big monolith.
+If your system runs and scales on Kubernetes-On-ARM (built on Raspberry Pi)
+then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
 </description>
     </item>
     
