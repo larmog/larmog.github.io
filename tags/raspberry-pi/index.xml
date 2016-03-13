@@ -7,8 +7,365 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 03 Mar 2016 09:12:49 +0100</lastBuildDate>
+    <lastBuildDate>Sun, 13 Mar 2016 22:44:21 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/raspberry-pi/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>ELK cluster on Kubernetes-On-ARM - Part 1</title>
+      <link>http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/</link>
+      <pubDate>Sun, 13 Mar 2016 22:44:21 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/</guid>
+      <description>
+
+&lt;p&gt;One of the most important parts of running a cluster is to gain knowledge of
+whats going on. Using tools like &lt;code&gt;kubectl logs&lt;/code&gt; or &lt;code&gt;docker logs&lt;/code&gt; is fine if you
+run one or two nodes, but it soon gets impossible to get an overview of whats
+going on, and you need to be able to view, query and monitor your logs from one
+central place.&lt;/p&gt;
+
+&lt;p&gt;This blog post is about setting up
+&lt;em&gt;Elasticsearch + Logstash + Kibana ELK on Kubernetes-On-ARM&lt;/em&gt;. You could question
+the use of running &lt;em&gt;ELK&lt;/em&gt; on an &lt;em&gt;ARM&lt;/em&gt; cluster of &lt;em&gt;Raspberry Pi&lt;/em&gt;:s, and you are
+right, it is a bit to heavy. But I use the cluster as a way of learning, and the
+steps are the same as if you are running on &lt;code&gt;x86_64&lt;/code&gt; or in the cloud. There’s also
+a bunch of new &lt;code&gt;ARM64&lt;/code&gt; single-board computers on the way, &lt;em&gt;Raspberry Pi 3&lt;/em&gt;
+being the first.&lt;/p&gt;
+
+&lt;p&gt;You can use &lt;a href=&#34;http://www.fluentd.org/&#34;&gt;&lt;code&gt;fluentd&lt;/code&gt;&lt;/a&gt; instead of &lt;code&gt;logstash&lt;/code&gt; but we
+stick to &lt;code&gt;logstash&lt;/code&gt; for now.&lt;/p&gt;
+
+&lt;p&gt;Setting up &lt;em&gt;ELK&lt;/em&gt; on Kubernetes is nothing new, I&amp;rsquo;m using Paulo Pires:s
+&lt;a href=&#34;https://github.com/larmog/kubernetes-elasticsearch-cluster&#34;&gt;kubernetes-elasticsearch-cluster&lt;/a&gt;
+and &lt;a href=&#34;https://github.com/larmog/kubernetes-elk-cluster&#34;&gt;kubernetes-elk-cluster&lt;/a&gt;,
+modified for ARM.&lt;/p&gt;
+
+&lt;p&gt;The thing is, how do we collect our container logs and send them to logstash?
+The first alternative is to use
+&lt;a href=&#34;https://github.com/elastic/logstash-forwarder&#34;&gt;logstash-forwarder&lt;/a&gt; but the
+project has been replaced by
+&lt;a href=&#34;https://github.com/elastic/beats/tree/master/filebeat&#34;&gt;filebeat&lt;/a&gt;, so that
+becomes our second alternative. Then I found &lt;em&gt;gliderlabs&lt;/em&gt;
+&lt;a href=&#34;https://github.com/gliderlabs/logspout&#34;&gt;logspout&lt;/a&gt; project and &lt;em&gt;looplab&lt;/em&gt;:s
+&lt;a href=&#34;https://github.com/looplab/logspout-logstash&#34;&gt;logspout-logstash&lt;/a&gt; module, which
+is a third alternative.&lt;/p&gt;
+
+&lt;p&gt;If you want to use &lt;code&gt;kubectl logs&lt;/code&gt; or &lt;code&gt;docker logs&lt;/code&gt; you
+need to stick to the &lt;code&gt;json-file&lt;/code&gt; or &lt;code&gt;journald&lt;/code&gt; logging driver in Docker. The
+&lt;code&gt;json-file&lt;/code&gt; driver is rather resource consuming and not a great alternative for
+production. There&amp;rsquo;s a logstash plugin for
+&lt;a href=&#34;https://github.com/logstash-plugins/logstash-input-journald&#34;&gt;&lt;code&gt;journald&lt;/code&gt;&lt;/a&gt; that
+looks promising and I hope to explore the different alternatives in the up
+coming posts. Using &lt;code&gt;journald&lt;/code&gt; for Docker means that we can use the same
+mechanism for sending logs for hosts and containers.&lt;/p&gt;
+
+&lt;p&gt;To summarize what we want to achieve:
+&lt;div class=&#34;card-panel teal&#34;&gt;&lt;span class=&#34;white-text&#34;&gt;
+&lt;em&gt;We want to collect the logs and collect
+them as quick as possible, but still be able to use the tools we&amp;rsquo;re used to like
+&lt;code&gt;docker logs&lt;/code&gt; and &lt;code&gt;kubectl logs&lt;/code&gt;.&lt;/em&gt;
+&lt;/span&gt;&lt;/div&gt;
+We&amp;rsquo;ll see how much of this we can achieve.&lt;/p&gt;
+
+&lt;p&gt;But we need to start somewhere, so let&amp;rsquo;s get started with &lt;code&gt;logstash-forwarder&lt;/code&gt;
+and collect &lt;code&gt;syslog&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;elasticsearch:5ef3c2c0e23696371af99bf964485763&#34;&gt;Elasticsearch&lt;/h4&gt;
+
+&lt;p&gt;First we need to get &lt;code&gt;elasticsearch&lt;/code&gt; up and running. I have prepared all
+necessary docker images so all you need to do is to deploy them to your cluster.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Clone the git repo
+$ git clone https://github.com/larmog/kubernetes-elasticsearch-cluster.git
+$ cd kubernetes-elasticsearch-cluster
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Follow Paulo&amp;rsquo;s instructions to &lt;a href=&#34;https://github.com/larmog/kubernetes-elasticsearch-cluster#deploy&#34;&gt;deploy&lt;/a&gt;
+the cluster. I recommend that you wait until each component is provisioned
+before you deploy the next.&lt;/p&gt;
+
+&lt;p&gt;If all went well, you should now have &lt;code&gt;elasticsearch&lt;/code&gt; running. You can check the
+status using this command:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;docker run --rm --dns=10.0.0.10 hypriot/armhf-busybox wget -q -O -  http://elasticsearch:9200/_cluster/health?pretty
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;logstash-kibana:5ef3c2c0e23696371af99bf964485763&#34;&gt;Logstash + Kibana&lt;/h4&gt;
+
+&lt;p&gt;Paulo’s solution uses the Lumberjack secure protocol, and you need generate your
+own certificate and key for &lt;code&gt;logstash.default.svc.cluster.local&lt;/code&gt;. I am using
+&lt;code&gt;easyrsa3&lt;/code&gt;. Make sure that you have valid &lt;code&gt;.key&lt;/code&gt; and &lt;code&gt;.crt&lt;/code&gt; files. You can of
+course change your protocol to something other than &lt;code&gt;lumberjack&lt;/code&gt; and make the
+corresponding change in &lt;code&gt;logstash-forwarder&lt;/code&gt;. I will show you how to setup
+&lt;code&gt;lumberjack&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Install Kelsey Hightower:s tool
+&lt;a href=&#34;https://github.com/kelseyhightower/conf2kube&#34;&gt;&lt;code&gt;conf2kube&lt;/code&gt;&lt;/a&gt;. You will need it
+later.&lt;/p&gt;
+
+&lt;p&gt;Create a temp working directory and copy your generated server key and
+certificate:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ mkdir logstash-tmp &amp;amp;&amp;amp; cd logstash-tmp
+$ cp xxx/&amp;lt;filename&amp;gt;.crt .
+$ cp xxx/&amp;lt;filename&amp;gt;.key .
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Create a &lt;code&gt;logstash.conf&lt;/code&gt; file that corresponds to your key and certificate files.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ echo &amp;lt;&amp;lt;&amp;lt; EOL
+input {
+  lumberjack {
+    port =&amp;gt; 5043
+    ssl_certificate =&amp;gt; &amp;quot;/logstash/certs/&amp;lt;filename&amp;gt;.crt&amp;quot;
+    ssl_key =&amp;gt; &amp;quot;/logstash/certs/&amp;lt;filename&amp;gt;.key&amp;quot;
+    type =&amp;gt; &amp;quot;lumberjack&amp;quot;
+  }
+}
+
+output {
+  elasticsearch {
+    hosts =&amp;gt; [&amp;quot;elasticsearch:9200&amp;quot;]
+  }
+}
+EOL &amp;gt;&amp;gt; logstash.conf;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You shold now have three files: &lt;code&gt;&amp;lt;filename&amp;gt;.key &amp;lt;filename&amp;gt;.crt logstash.conf&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Create two secrets that will be mounted in the &lt;code&gt;logstash&lt;/code&gt; pod
+(see &lt;a href=&#34;https://github.com/larmog/kubernetes-elk-cluster/blob/master/logstash-controller.yaml&#34;&gt;&lt;code&gt;logstash-controller.yaml&lt;/code&gt;&lt;/a&gt;).&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Create logstash-ssl secret
+$ conf2kube -n logstash-ssl -f &amp;lt;filename&amp;gt;.crt | kubectl create -f -
+$ kubectl patch secret logstash-ssl -p `conf2kube -n logstash-ssl -f &amp;lt;filename&amp;gt;.key`
+$
+$ # Create logstash.conf secret
+$ conf2kube -n logstash.conf -f logstash.conf | kubectl create -f -
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You should now have two &lt;code&gt;logstash&lt;/code&gt; secrets:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get secrets
+NAME                        TYPE                                  DATA      AGE
+default-token-i5v41         kubernetes.io/service-account-token   2         59d
+logstash-ssl                Opaque                                2         1d
+logstash.conf               Opaque                                1         1d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now clone the kubernetes-elk-cluster repo and create the logstash server and
+kibana controller:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ git clone https://github.com/larmog/kubernetes-elk-cluster.git
+$ cd kubernetes-elk-cluster
+$ kubectl create -f service-account.yaml
+$ kubectl create -f logstash-service.yaml
+$ kubectl create -f logstash-controller.yaml
+$ kubectl create -f kibana-controller.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Great! You should now have &lt;code&gt;logstash&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt; running!&lt;/p&gt;
+
+&lt;p&gt;For you to be able to access &lt;code&gt;kibana&lt;/code&gt;, you need to expose the service outside
+your cluster. I assume that you have used the &lt;code&gt;Kubernetes-On-ARM&lt;/code&gt; addon
+&lt;code&gt;loadbalancer&lt;/code&gt;. Kibana doesn&amp;rsquo;t work with a sub-context so you need to expose
+&lt;code&gt;kibana&lt;/code&gt; as a virtual host.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Run the following command with your Kibana host name.
+$ sed -e &#39;s/kibana.kodbasen.org/&amp;lt;hostname&amp;gt;/g&#39; kibana-service.yaml &amp;gt; modified-kibana-service.yaml
+$ kubectl create -f modified-kibana-service.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If everything has gone according to plan you should see something similar:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl -I http://&amp;lt;hostname&amp;gt;
+HTTP/1.1 400 Bad Request
+kbn-name: kibana
+kbn-version: 4.4.0
+content-type: application/json; charset=utf-8
+cache-control: no-cache
+Date: Sat, 12 Mar 2016 11:16:37 GMT
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Never mind the &lt;code&gt;400&lt;/code&gt; answer, you can see that Kibana has replied with
+&lt;code&gt;kbn-name: kibana&lt;/code&gt; and &lt;code&gt;kbn-version: 4.4.0&lt;/code&gt;. Now try to open Kibana in your
+favorite browser.&lt;/p&gt;
+
+&lt;p&gt;We have covered a lot of ground, and you should give your self a tap on the
+shoulder. But were not done yet. We have &lt;em&gt;elasticsearch&lt;/em&gt; running and &lt;em&gt;logstash&lt;/em&gt;
+waiting for logs to be stored in elastic. &lt;em&gt;Kibana&lt;/em&gt; is hanging around waiting for
+logs to appear in the &lt;code&gt;.kibana&lt;/code&gt; index. But we need to start thinking of how
+to forward logs from our nodes to &lt;em&gt;logstash&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;logstash-forwarder:5ef3c2c0e23696371af99bf964485763&#34;&gt;Logstash Forwarder&lt;/h4&gt;
+
+&lt;p&gt;In this first part we will use &lt;code&gt;logstash-forwarder&lt;/code&gt; to collect logs from our
+nodes and forward them to logstash. In the following parts of this series we
+will look into other ways. The &lt;code&gt;logstash-forwarder&lt;/code&gt; project has been replaced
+by &lt;code&gt;filebeat&lt;/code&gt; but that´s a topic for the next post.&lt;/p&gt;
+
+&lt;p&gt;We need to run &lt;code&gt;logstash-forwarder&lt;/code&gt; on every node that we wan&amp;rsquo;t to collect logs
+from. Kubernetes &lt;code&gt;1.2&lt;/code&gt; will include daemon sets, which is a great feature for
+running things on a set of nodes but we are still running &lt;code&gt;1.1.x&lt;/code&gt;. In the
+meantime, until &lt;code&gt;1.2&lt;/code&gt; is released, we&amp;rsquo;ll use static pods.&lt;/p&gt;
+
+&lt;p&gt;Repeat the following steps on every node where you wan&amp;rsquo;t to collect logs:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ mkdir -p /etc/logstash-forvarder/certs &amp;amp;&amp;amp; mkdir /etc/logstash-forvarder/config
+$
+$ # Copy the CA certificate that was used to create the logstash cert.
+$ cp ca.crt /etc/logstash-forvarder/certs
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Create the &lt;code&gt;logstash-forwarder.conf&lt;/code&gt; in &lt;code&gt;/etc/logstash-forvarder/config&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;network&amp;quot;: {
+    &amp;quot;servers&amp;quot;: [
+        &amp;quot;logstash.default.svc.cluster.local:5043&amp;quot;
+    ],
+    &amp;quot;timeout&amp;quot;: 15,
+    &amp;quot;ssl ca&amp;quot;: &amp;quot;/logstash-forwarder/certs/ca.crt&amp;quot;
+  },
+  &amp;quot;files&amp;quot;: [
+    {
+      &amp;quot;paths&amp;quot;: [
+        &amp;quot;/var/log/syslog&amp;quot;
+      ],
+      &amp;quot;fields&amp;quot;: {&amp;quot;type&amp;quot;: &amp;quot;syslog&amp;quot;}
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Create the &lt;code&gt;logstash-forwarder&lt;/code&gt; static pod file &lt;code&gt;logstash-forwarder.json&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+  &amp;quot;apiVersion&amp;quot;: &amp;quot;v1&amp;quot;,
+  &amp;quot;kind&amp;quot;: &amp;quot;Pod&amp;quot;,
+  &amp;quot;metadata&amp;quot;: {
+    &amp;quot;name&amp;quot;:&amp;quot;logstash-forwarder&amp;quot;
+  },
+  &amp;quot;spec&amp;quot;:{
+    &amp;quot;containers&amp;quot;:[
+      {
+        &amp;quot;name&amp;quot;: &amp;quot;logstash-forwarder&amp;quot;,
+        &amp;quot;image&amp;quot;: &amp;quot;larmog/logstash-forwarder:2.2.0&amp;quot;,
+        &amp;quot;imagePullPolicy&amp;quot;: &amp;quot;IfNotPresent&amp;quot;,
+        &amp;quot;command&amp;quot;: [
+        ],
+        &amp;quot;securityContext&amp;quot;: {
+          &amp;quot;privileged&amp;quot;: true
+        },
+        &amp;quot;volumeMounts&amp;quot;:[{
+          &amp;quot;name&amp;quot;: &amp;quot;certs&amp;quot;,
+          &amp;quot;mountPath&amp;quot;: &amp;quot;/logstash-forwarder/certs&amp;quot;
+        },
+        {
+          &amp;quot;name&amp;quot;: &amp;quot;config&amp;quot;,
+          &amp;quot;mountPath&amp;quot;: &amp;quot;/logstash-forwarder/config&amp;quot;
+        },
+        {
+          &amp;quot;name&amp;quot;: &amp;quot;syslog&amp;quot;,
+          &amp;quot;mountPath&amp;quot;: &amp;quot;/var/log/syslog&amp;quot;
+        }]
+    }],
+    &amp;quot;volumes&amp;quot;: [
+      {
+        &amp;quot;name&amp;quot;: &amp;quot;certs&amp;quot;,
+        &amp;quot;hostPath&amp;quot;: {
+          &amp;quot;path&amp;quot;: &amp;quot;/etc/logstash-forwarder/certs&amp;quot;
+        }
+      },{
+        &amp;quot;name&amp;quot;: &amp;quot;config&amp;quot;,
+        &amp;quot;hostPath&amp;quot;: {
+          &amp;quot;path&amp;quot;: &amp;quot;/etc/logstash-forwarder/config&amp;quot;
+        }
+      },
+      {
+        &amp;quot;name&amp;quot;: &amp;quot;syslog&amp;quot;,
+        &amp;quot;hostPath&amp;quot;: {
+          &amp;quot;path&amp;quot;: &amp;quot;/var/log/syslog&amp;quot;
+        }
+      }
+    ]
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Copy the file to the manifest directory. In Kubernetes-On-ARM there located
+here:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;On the master: &lt;code&gt;/etc/kubernetes/static-pods/master&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;On workers: &lt;code&gt;/etc/kubernetes/static-pods/worker&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The &lt;code&gt;kubelet&lt;/code&gt; will pick up the static pod definition as soon as the file is
+copied to the manifets directory. Run &lt;code&gt;docker ps|grep logstash-forwarder:2.2.0&lt;/code&gt;
+on the node, and you should see the container running.&lt;/p&gt;
+
+&lt;p&gt;And we are done! The &lt;code&gt;logstash-forwarder&lt;/code&gt; starts processing events and if you
+look at the container log, you should see something similar:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ docker logs -f 8c4a3ba3f3e9
+...
+2016/03/11 15:13:41.575130 Registrar: processing 1024 events
+2016/03/11 15:13:55.862568 Registrar: processing 1024 events
+2016/03/11 15:14:01.671923 Registrar: processing 1024 events
+2016/03/11 15:14:02.889663 Registrar: processing 256 events
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;to-sum-up:5ef3c2c0e23696371af99bf964485763&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;We have created a &lt;code&gt;elasticsearch&lt;/code&gt; cluster for storing logs, and &lt;code&gt;logstash&lt;/code&gt;for
+processing incoming logs. We&amp;rsquo;ve also setup &lt;code&gt;kibana&lt;/code&gt; for searching and
+visualizing. On our nodes we have installed &lt;code&gt;logstash-forwarder&lt;/code&gt;, to send all
+&lt;code&gt;/var/log/syslog&lt;/code&gt; events to &lt;code&gt;logstash&lt;/code&gt;, using the &lt;code&gt;lumberjack&lt;/code&gt; protocol.&lt;/p&gt;
+
+&lt;p&gt;In the next part in this series we will investigate how we can forward stdout
+and stderr from our containers to &lt;code&gt;logstash&lt;/code&gt;. As always, I hope you picked up
+something new and found it worth while reading.&lt;/p&gt;
+
+&lt;h5 id=&#34;docker-images:5ef3c2c0e23696371af99bf964485763&#34;&gt;Docker images&lt;/h5&gt;
+
+&lt;p&gt;All images are built from Pauls with generated &lt;code&gt;Dockerfile&lt;/code&gt;:s for &lt;code&gt;armhf&lt;/code&gt;.
+The &lt;em&gt;Java&lt;/em&gt; base image for &lt;code&gt;elasticsearch&lt;/code&gt; is
+&lt;a href=&#34;https://hub.docker.com/r/larmog/armhf-alpine-java/&#34;&gt;larmog/armhf-alpine-java&lt;/a&gt;&lt;/p&gt;
+
+&lt;h5 id=&#34;acknowledgement:5ef3c2c0e23696371af99bf964485763&#34;&gt;Acknowledgement&lt;/h5&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/pires&#34;&gt;Paulo Pires&lt;/a&gt; repositories for
+&lt;code&gt;elasticsearch&lt;/code&gt;, &lt;code&gt;logstash&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/leannenorthrop&#34;&gt;Leanne Northrop&lt;/a&gt; repository for Docker
+Java image on &lt;code&gt;armhf&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h5 id=&#34;links:5ef3c2c0e23696371af99bf964485763&#34;&gt;Links&lt;/h5&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/pires/kubernetes-elasticsearch-cluster&#34;&gt;https://github.com/pires/kubernetes-elasticsearch-cluster&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/pires/kubernetes-elk-cluster&#34;&gt;https://github.com/pires/kubernetes-elk-cluster&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://technologyconversations.com/2015/05/18/centralized-system-and-docker-logging-with-elk-stack/&#34;&gt;http://technologyconversations.com/2015/05/18/centralized-system-and-docker-logging-with-elk-stack/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://thepracticalsysadmin.com/shipping-logs-to-elk/&#34;&gt;https://thepracticalsysadmin.com/shipping-logs-to-elk/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.dasblinkenlichten.com/logging-in-kubernetes-with-fluentd-and-elasticsearch/&#34;&gt;http://www.dasblinkenlichten.com/logging-in-kubernetes-with-fluentd-and-elasticsearch/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://kubernetes.io/v1.1/docs/getting-started-guides/logging-elasticsearch.html&#34;&gt;http://kubernetes.io/v1.1/docs/getting-started-guides/logging-elasticsearch.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://kubernetes.io/v1.1/docs/user-guide/logging.html&#34;&gt;http://kubernetes.io/v1.1/docs/user-guide/logging.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.fluentd.org/guides/recipes/docker-logging&#34;&gt;http://www.fluentd.org/guides/recipes/docker-logging&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/GoogleCloudPlatform/kubernetes/tree/master/cluster/addons/fluentd-elasticsearch/fluentd-es-image&#34;&gt;https://github.com/GoogleCloudPlatform/kubernetes/tree/master/cluster/addons/fluentd-elasticsearch/fluentd-es-image&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/gliderlabs/logspout&#34;&gt;https://github.com/gliderlabs/logspout&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/looplab/logspout-logstash&#34;&gt;https://github.com/looplab/logspout-logstash&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/gliderlabs/logspout/~/dockerfile/&#34;&gt;https://hub.docker.com/r/gliderlabs/logspout/~/dockerfile/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://groups.google.com/forum/#!topic/google-containers/ZJzUIn_r3w4&#34;&gt;https://groups.google.com/forum/#!topic/google-containers/ZJzUIn_r3w4&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;old &lt;a href=&#34;https://github.com/stuart-warren/logstash-input-journald&#34;&gt;https://github.com/stuart-warren/logstash-input-journald&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/logstash-plugins/logstash-input-journald&#34;&gt;https://github.com/logstash-plugins/logstash-input-journald&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/elastic/logstash/issues/1729&#34;&gt;https://github.com/elastic/logstash/issues/1729&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/vaijab/logstash-filter-kubernetes&#34;&gt;https://github.com/vaijab/logstash-filter-kubernetes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.fluentd.org&#34;&gt;http://www.fluentd.org&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>Nothing for the faint hearted</title>
