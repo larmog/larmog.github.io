@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>E(F)K cluster on Kubernetes-On-ARM - Part 2</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>E(F)K cluster on Kubernetes-On-ARM - Part 2</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+          
+          </p>
+          <p>
+
+<p>This is the second part in a series about handling logs on Kubernetes-On-ARM.
+In the first part we installed ELK and started sending syslog events from our
+nodes using <code>logstash-forwarder</code>. In this part we will start collecting logs
+from our <code>pods</code> and Kubernetes components. If you wan&rsquo;t to cache up here&rsquo;s a
+list of previous posts:</p>
+
+<ul>
+<li><a href="/2016/02/06/kubernetes-on-arm/">Kubernetes-On-ARM</a></li>
+<li><a href="/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/">ELK cluster on Kubernetes-On-ARM - Part 1</a></li>
+</ul>
+
+<p>The plan was that this part would be about how
+to start collecting logs from Kubernetes. But I wasn&rsquo;t satisfied with how
+<code>logstash-forwarder</code> worked. The thing is that, once the <code>logstash-forwarder</code>
+daemon is started, the node can&rsquo;t run much else.</p>
+
+<p>Another problem with the first attempt was that we were collecting <code>syslog</code>
+messages instead of collecting logs directly from <code>journald</code>. There is no
+<code>syslog</code> on <code>Arch Linux</code> by default. You need to install <code>syslog-ng</code> in order to
+make it available. That doesn&rsquo;t make sense when running on a <code>Raspberry-Pi</code>.</p>
+
+<p>A better solution is to collect the logs directly from the source, and send them
+to <code>elasticsearch</code>. In this second part we will replace <code>logstash-forwarder</code> and
+<code>logstash</code> with <code>fluentd</code> for collecting logs. We will add two <code>systemd</code>
+services on each node that will keep track of the position in the <code>journald</code> and
+send logs as <code>JSON</code> to <code>fluentd</code> using <code>ncat</code>. Fluentd will receive the logs
+from our service and also collect logs from <code>docker</code> containers on each host
+and add metadata from <code>Kubernetes</code>.</p>
+
+<p>So let&rsquo;s get started :)</p>
+
+<p>If you haven&rsquo;t upgraded to <code>Kubernetes-On-ARM v0.7.0</code> and <code>Kubernetes 1.2</code>, do
+that first.</p>
+
+<h4 id="upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2:067b7f7d4fc16bce7784c9369d044678">Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2</h4>
+
+<p>I have created images for <code>elasticsearch</code> and <code>kibana</code> that can be found here:</p>
+
+<ul>
+<li><a href="https://hub.docker.com/r/kodbasen/elasticsearch-kubernetes-armhf/">https://hub.docker.com/r/kodbasen/elasticsearch-kubernetes-armhf/</a></li>
+<li><a href="https://hub.docker.com/r/kodbasen/kibana-armhf/">https://hub.docker.com/r/kodbasen/kibana-armhf/</a></li>
+</ul>
+
+<p>If you want to upgrade <code>elasticsearch</code> to version <code>2.3.2</code> and <code>kibana</code> version
+<code>4.5.0</code> run the following commands:</p>
+
+<pre><code class="language-shell">$ # Warning this will remove your elasticsearch from Part 1
+$ kubectl delete -f https://raw.githubusercontent.com/kodbasen/elasticsearch-kubernetes-armhf/master/elasticsearch.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kodbasen/elasticsearch-kubernetes-armhf/master/elasticsearch.yaml
+$ # Warning this will delete your kibana from Part 1
+$ kubectl delete -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
+</code></pre>
+
+<h4 id="collecting-journald-logs:067b7f7d4fc16bce7784c9369d044678">Collecting journald logs</h4>
+
+<p>I found this solution from <a href="https://github.com/ianblenke/docker-fluentd/tree/master/systemd">ianblenke</a>
+and I have created a repo here: <a href="https://github.com/kodbasen/fluentd-kubernetes">fluentd-kubernetes</a>.</p>
+
+<p>Here&rsquo;s how to install the services on each node in your cluster:</p>
+
+<pre><code class="language-shell">$ # Install ncat first (apt-get install nmap or pacman -S nmap)
+$ # Clone the repo
+$ git clone https://github.com/kodbasen/fluentd-kubernetes &amp;&amp; cd fluentd-kubernetes
+$ sudo cp systemd/*.service /usr/lib/systemd/system
+$ sudo systemctl enable journald-fluentd-pos.service
+$ sudo systemctl restart journald-fluentd-pos.service
+$ sudo systemctl enable journald-fluentd.service
+$ sudo systemctl restart journald-fluentd.service
+$ # You can verify that the streaming works by using the following cmd:
+$ ncat -l -k 5170
+</code></pre>
+
+<p>The <code>journald-fluentd-pos.service</code> will keep track of the <code>journald</code> position
+and <code>journald-fluentd.service</code> will follow <code>journald</code> in <code>JSON</code> format and send
+the logs to <code>fluentd</code> on port <code>5170</code> using <code>ncat</code>.</p>
+
+<p>The next step is to start our <code>daemonSet</code>, that will collect all logs on the node
+and send them to <code>elasticsearch</code>.</p>
+
+<pre><code class="language-shell">$ git clone https://github.com/kodbasen/fluentd-kubernetes &amp;&amp; cd fluentd-kubernetes
+$ kubectl create -f fluentd-ds.yml
+</code></pre>
+
+<p>You should now see how your <code>fluentd</code> daemons are starting on all your nodes:</p>
+
+<pre><code class="language-shell">$ kubectl get pods
+NAME                      READY     STATUS    RESTARTS   AGE
+es-client-nrlbv           1/1       Running   0          2h
+es-client-tm618           1/1       Running   0          2h
+es-data-bvsqx             1/1       Running   0          2h
+es-master-skdmf           1/1       Running   0          2h
+fluentd-319fq             1/1       Running   0          16h
+fluentd-41sml             1/1       Running   0          16h
+fluentd-5kzt6             1/1       Running   0          16h
+fluentd-86scv             1/1       Running   0          16h
+fluentd-gqxr8             1/1       Running   0          16h
+fluentd-rkod8             1/1       Running   0          16h
+fluentd-u0vhl             1/1       Running   0          16h
+fluentd-uqx3g             1/1       Running   0          16h
+fluentd-zs06d             1/1       Running   0          16h
+kibana-6rqgk              1/1       Running   3          2d
+</code></pre>
+
+<p>Our <code>fluentd</code> daemon accepts incoming logs on <code>tcp</code> port <code>5170</code> and tags them
+with <code>systemd</code> it will also tail all logs found in <code>/var/log/containers</code> and
+tag them with <code>kubelet.*</code>.</p>
+
+<p>Open Kibana in your browser and you should see that your logs are beeing stored
+in <code>elasticsearch</code>.</p>
+
+<p>I&rsquo;ve created two saved searches, one foreach tag:</p>
+
+<p>
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Systemd tag search in Kibana</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/systemd-tag.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Kubelet tag search in Kibana</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/kubelet-tag.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+</p>
+
+<h4 id="to-sum-up:067b7f7d4fc16bce7784c9369d044678">To sum up</h4>
+
+<p>Now we can collect logs from both <code>PODS</code> and <code>nodes</code>. But you will soon discover
+that our nodes generates a huge amount of logs. Basically were running the same
+software as on the <code>x86_64</code> platform but with much less resources
+(memory, cpu and disk). The old saying <strong>Silence is golden</strong> is very true
+when it comes to logging. Our applications and components should only report
+when something is wrong, and even then, the log should be a single line carrying
+just enough information to identify the problem. If you take a look at the
+stacktraces from <code>elasticsearch</code> and <code>Java</code> that is written to <code>stderr</code>, each
+line generates a log message. A single error, written to <code>stderr</code>, with a
+stacktrace can result in a huge amount of log messages. I leave it up to you to
+filter out unnecessary logs and aggregate and combine multiple rows in to one
+log message. All to minimize the noise.</p>
+</p>
+          <p>2 May 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/elasticsearch/">#Elasticsearch</a>
+              
+                <a href="http://larmog.github.io//tags/fluentd/">#Fluentd</a>
+              
+                <a href="http://larmog.github.io//tags/logstash/">#Logstash</a>
+              
+                <a href="http://larmog.github.io//tags/kibana/">#Kibana</a>
+              
+                <a href="http://larmog.github.io//tags/arm/">#ARM</a>
+              
+                <a href="http://larmog.github.io//tags/logging/">#Logging</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f&text=E%28F%29K%20cluster%20on%20Kubernetes-On-ARM%20-%20Part%202&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f&title=E%28F%29K%20cluster%20on%20Kubernetes-On-ARM%20-%20Part%202" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f&title=E%28F%29K%20cluster%20on%20Kubernetes-On-ARM%20-%20Part%202" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f&mini=true&title=E%28F%29K%20cluster%20on%20Kubernetes-On-ARM%20-%20Part%202&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=E%28F%29K%20cluster%20on%20Kubernetes-On-ARM%20-%20Part%202&body=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f02%2fefk-cluster-on-kubernetes-on-arm---part-2%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

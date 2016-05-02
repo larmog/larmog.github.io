@@ -7,8 +7,183 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sun, 13 Mar 2016 22:44:21 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 02 May 2016 08:55:37 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>E(F)K cluster on Kubernetes-On-ARM - Part 2</title>
+      <link>http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/</link>
+      <pubDate>Mon, 02 May 2016 08:55:37 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/</guid>
+      <description>
+
+&lt;p&gt;This is the second part in a series about handling logs on Kubernetes-On-ARM.
+In the first part we installed ELK and started sending syslog events from our
+nodes using &lt;code&gt;logstash-forwarder&lt;/code&gt;. In this part we will start collecting logs
+from our &lt;code&gt;pods&lt;/code&gt; and Kubernetes components. If you wan&amp;rsquo;t to cache up here&amp;rsquo;s a
+list of previous posts:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/&#34;&gt;ELK cluster on Kubernetes-On-ARM - Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The plan was that this part would be about how
+to start collecting logs from Kubernetes. But I wasn&amp;rsquo;t satisfied with how
+&lt;code&gt;logstash-forwarder&lt;/code&gt; worked. The thing is that, once the &lt;code&gt;logstash-forwarder&lt;/code&gt;
+daemon is started, the node can&amp;rsquo;t run much else.&lt;/p&gt;
+
+&lt;p&gt;Another problem with the first attempt was that we were collecting &lt;code&gt;syslog&lt;/code&gt;
+messages instead of collecting logs directly from &lt;code&gt;journald&lt;/code&gt;. There is no
+&lt;code&gt;syslog&lt;/code&gt; on &lt;code&gt;Arch Linux&lt;/code&gt; by default. You need to install &lt;code&gt;syslog-ng&lt;/code&gt; in order to
+make it available. That doesn&amp;rsquo;t make sense when running on a &lt;code&gt;Raspberry-Pi&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;A better solution is to collect the logs directly from the source, and send them
+to &lt;code&gt;elasticsearch&lt;/code&gt;. In this second part we will replace &lt;code&gt;logstash-forwarder&lt;/code&gt; and
+&lt;code&gt;logstash&lt;/code&gt; with &lt;code&gt;fluentd&lt;/code&gt; for collecting logs. We will add two &lt;code&gt;systemd&lt;/code&gt;
+services on each node that will keep track of the position in the &lt;code&gt;journald&lt;/code&gt; and
+send logs as &lt;code&gt;JSON&lt;/code&gt; to &lt;code&gt;fluentd&lt;/code&gt; using &lt;code&gt;ncat&lt;/code&gt;. Fluentd will receive the logs
+from our service and also collect logs from &lt;code&gt;docker&lt;/code&gt; containers on each host
+and add metadata from &lt;code&gt;Kubernetes&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;So let&amp;rsquo;s get started :)&lt;/p&gt;
+
+&lt;p&gt;If you haven&amp;rsquo;t upgraded to &lt;code&gt;Kubernetes-On-ARM v0.7.0&lt;/code&gt; and &lt;code&gt;Kubernetes 1.2&lt;/code&gt;, do
+that first.&lt;/p&gt;
+
+&lt;h4 id=&#34;upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2&lt;/h4&gt;
+
+&lt;p&gt;I have created images for &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt; that can be found here:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/kodbasen/elasticsearch-kubernetes-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/elasticsearch-kubernetes-armhf/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/kodbasen/kibana-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/kibana-armhf/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;If you want to upgrade &lt;code&gt;elasticsearch&lt;/code&gt; to version &lt;code&gt;2.3.2&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt; version
+&lt;code&gt;4.5.0&lt;/code&gt; run the following commands:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Warning this will remove your elasticsearch from Part 1
+$ kubectl delete -f https://raw.githubusercontent.com/kodbasen/elasticsearch-kubernetes-armhf/master/elasticsearch.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kodbasen/elasticsearch-kubernetes-armhf/master/elasticsearch.yaml
+$ # Warning this will delete your kibana from Part 1
+$ kubectl delete -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
+$ kubectl create -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;collecting-journald-logs:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Collecting journald logs&lt;/h4&gt;
+
+&lt;p&gt;I found this solution from &lt;a href=&#34;https://github.com/ianblenke/docker-fluentd/tree/master/systemd&#34;&gt;ianblenke&lt;/a&gt;
+and I have created a repo here: &lt;a href=&#34;https://github.com/kodbasen/fluentd-kubernetes&#34;&gt;fluentd-kubernetes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s how to install the services on each node in your cluster:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Install ncat first (apt-get install nmap or pacman -S nmap)
+$ # Clone the repo
+$ git clone https://github.com/kodbasen/fluentd-kubernetes &amp;amp;&amp;amp; cd fluentd-kubernetes
+$ sudo cp systemd/*.service /usr/lib/systemd/system
+$ sudo systemctl enable journald-fluentd-pos.service
+$ sudo systemctl restart journald-fluentd-pos.service
+$ sudo systemctl enable journald-fluentd.service
+$ sudo systemctl restart journald-fluentd.service
+$ # You can verify that the streaming works by using the following cmd:
+$ ncat -l -k 5170
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;journald-fluentd-pos.service&lt;/code&gt; will keep track of the &lt;code&gt;journald&lt;/code&gt; position
+and &lt;code&gt;journald-fluentd.service&lt;/code&gt; will follow &lt;code&gt;journald&lt;/code&gt; in &lt;code&gt;JSON&lt;/code&gt; format and send
+the logs to &lt;code&gt;fluentd&lt;/code&gt; on port &lt;code&gt;5170&lt;/code&gt; using &lt;code&gt;ncat&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The next step is to start our &lt;code&gt;daemonSet&lt;/code&gt;, that will collect all logs on the node
+and send them to &lt;code&gt;elasticsearch&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ git clone https://github.com/kodbasen/fluentd-kubernetes &amp;amp;&amp;amp; cd fluentd-kubernetes
+$ kubectl create -f fluentd-ds.yml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You should now see how your &lt;code&gt;fluentd&lt;/code&gt; daemons are starting on all your nodes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get pods
+NAME                      READY     STATUS    RESTARTS   AGE
+es-client-nrlbv           1/1       Running   0          2h
+es-client-tm618           1/1       Running   0          2h
+es-data-bvsqx             1/1       Running   0          2h
+es-master-skdmf           1/1       Running   0          2h
+fluentd-319fq             1/1       Running   0          16h
+fluentd-41sml             1/1       Running   0          16h
+fluentd-5kzt6             1/1       Running   0          16h
+fluentd-86scv             1/1       Running   0          16h
+fluentd-gqxr8             1/1       Running   0          16h
+fluentd-rkod8             1/1       Running   0          16h
+fluentd-u0vhl             1/1       Running   0          16h
+fluentd-uqx3g             1/1       Running   0          16h
+fluentd-zs06d             1/1       Running   0          16h
+kibana-6rqgk              1/1       Running   3          2d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Our &lt;code&gt;fluentd&lt;/code&gt; daemon accepts incoming logs on &lt;code&gt;tcp&lt;/code&gt; port &lt;code&gt;5170&lt;/code&gt; and tags them
+with &lt;code&gt;systemd&lt;/code&gt; it will also tail all logs found in &lt;code&gt;/var/log/containers&lt;/code&gt; and
+tag them with &lt;code&gt;kubelet.*&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Open Kibana in your browser and you should see that your logs are beeing stored
+in &lt;code&gt;elasticsearch&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve created two saved searches, one foreach tag:&lt;/p&gt;
+
+&lt;p&gt;
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Systemd tag search in Kibana&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/systemd-tag.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Kubelet tag search in Kibana&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/kubelet-tag.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;h4 id=&#34;to-sum-up:067b7f7d4fc16bce7784c9369d044678&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;Now we can collect logs from both &lt;code&gt;PODS&lt;/code&gt; and &lt;code&gt;nodes&lt;/code&gt;. But you will soon discover
+that our nodes generates a huge amount of logs. Basically were running the same
+software as on the &lt;code&gt;x86_64&lt;/code&gt; platform but with much less resources
+(memory, cpu and disk). The old saying &lt;strong&gt;Silence is golden&lt;/strong&gt; is very true
+when it comes to logging. Our applications and components should only report
+when something is wrong, and even then, the log should be a single line carrying
+just enough information to identify the problem. If you take a look at the
+stacktraces from &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;Java&lt;/code&gt; that is written to &lt;code&gt;stderr&lt;/code&gt;, each
+line generates a log message. A single error, written to &lt;code&gt;stderr&lt;/code&gt;, with a
+stacktrace can result in a huge amount of log messages. I leave it up to you to
+filter out unnecessary logs and aggregate and combine multiple rows in to one
+log message. All to minimize the noise.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>ELK cluster on Kubernetes-On-ARM - Part 1</title>

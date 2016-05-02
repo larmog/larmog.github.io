@@ -3,8 +3,13 @@
   
   <url>
     <loc>http://larmog.github.io/</loc>
-    <lastmod>2016-03-13T22:44:21+01:00</lastmod>
+    <lastmod>2016-05-02T08:55:37+01:00</lastmod>
     <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/</loc>
+    <lastmod>2016-05-02T08:55:37+01:00</lastmod>
   </url>
   
   <url>
