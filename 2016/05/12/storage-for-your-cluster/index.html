@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Storage for your cluster</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Storage for your cluster</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/storage/">Storage</a>
+            
+          
+          </p>
+          <p>
+
+<p>I&rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
+biggest problem has been storage. I&rsquo;m using Elasticserach for storing logs and
+the cluster generates 1.4 million entries per day (i know, need to do
+something about it).
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Hits during 24 hours</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/es-hits.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+
+If you want to deploy your applications to Kubernetes, sooner or later you need
+to think about how to solve storage and persistence.</p>
+
+<p>Kubernetes is a distributed cluster where nodes and pods comes and goes. We
+don&rsquo;t want to solve our persistence problem for a single node, we want to solve
+it for the whole cluster. That&rsquo;s where Kubernetes Volumes comes in. A quick look
+at the different <a href="http://kubernetes.io/docs/user-guide/volumes/">Volume Plugins</a>
+that are available gives us the following alternatives:</p>
+
+<ul>
+<li><code>nfs</code></li>
+<li><code>iscsi</code></li>
+<li><code>glusterfs</code></li>
+</ul>
+
+<p>I wrote an earlier post about
+<a href="/2016/02/22/glusterfs-on-kubernetes-arm/">GlusterFS On Kubernetes-ARM</a>.
+I still use <code>glustefs</code> and it&rsquo;s running on my <code>rpi-1</code>
+boards, but the I/O performance isn&rsquo;t enough for handling the logs from
+Fluentd that are stored in Elasticsearch. We need a bigger machinery.</p>
+
+<p>I&rsquo;ve been looking for a board that have Gigabit Ethernet and SATA or
+USB 3, that can be used for handling persistence. But buying a board and some
+disks and configuring services, that sounds a lot like building your own NAS,
+and there are plenty of cheap NAS products out there that supports at least two
+of the alternatives on our list, <code>nfs</code> and <code>iscsi</code>.</p>
+
+<p>I already own a home <code>NAS</code> and it supports both <code>nfs</code> and <code>iscsi</code>.</p>
+
+<p>I created two different <code>PersistentVolume</code>:s, one for each Volume Plugin, and
+mounted them in two different Elasticsearch data node pods, and suddenly, all the
+problems with Elasticsearch and Kibana is gone.</p>
+
+<h5 id="using-iscsi:28bd4339389ee1959293ee1ce0b1ef71">Using iSCSI</h5>
+
+<p>Installing <code>iSCSI</code> Initiator in Arch Linux is rather straight forward:</p>
+
+<pre><code class="language-shell">$ pacman -S --noconfirm open-iscsi
+$ systemctl enable open-iscsi.service
+$ systemctl restart open-iscsi.service
+$ iscsiadm -m discovery -t sendtargets -p &lt;ip of your iscsi target&gt;
+</code></pre>
+
+<p>You need to repeat the steps above for each node in your cluster and that&rsquo;s it,
+if your not going to use <code>CHAP</code>.</p>
+
+<p>Now we can create a <code>PersistentVolume</code>:</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lun0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  iscsi:
+    targetPortal: xxx.xxx.xxx.xxx:yyyy
+    iqn: &lt;iqn-target&gt;
+    lun: 0
+    fsType: ext4
+    readOnly: false
+</code></pre>
+
+<p>I leave it up to you to create a <code>PersistentVolumeClaim</code> and mount it in to your
+pod.</p>
+
+<h4 id="to-sum-up:28bd4339389ee1959293ee1ce0b1ef71">To sum up</h4>
+
+<p>If you want to use your Kubernetes-On-ARM cluster for more advanced applications
+then you need to think about how to solve persistence.</p>
+
+<p>I&rsquo;ve found a solution that suits my needs using <code>iscsi</code> and <code>nfs</code>, the only
+problem is that my NAS is almost full, and not so portable.</p>
+
+<p>Maybe it&rsquo;s time to build
+<code>Kodbasen cluster version 2</code>?</p>
+</p>
+          <p>12 May 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/arm/">#ARM</a>
+              
+                <a href="http://larmog.github.io//tags/nfs/">#NFS</a>
+              
+                <a href="http://larmog.github.io//tags/glusterfs/">#glusterFS</a>
+              
+                <a href="http://larmog.github.io//tags/iscsi/">#iscsi</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f&text=Storage%20for%20your%20cluster&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f&title=Storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f&title=Storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f&mini=true&title=Storage%20for%20your%20cluster&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Storage%20for%20your%20cluster&body=http%3a%2f%2flarmog.github.io%2f2016%2f05%2f12%2fstorage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

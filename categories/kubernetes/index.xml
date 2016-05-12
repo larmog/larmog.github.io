@@ -7,8 +7,120 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 02 May 2016 08:55:37 +0100</lastBuildDate>
+    <lastBuildDate>Thu, 12 May 2016 06:48:19 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Storage for your cluster</title>
+      <link>http://larmog.github.io/2016/05/12/storage-for-your-cluster/</link>
+      <pubDate>Thu, 12 May 2016 06:48:19 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/05/12/storage-for-your-cluster/</guid>
+      <description>
+
+&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
+biggest problem has been storage. I&amp;rsquo;m using Elasticserach for storing logs and
+the cluster generates 1.4 million entries per day (i know, need to do
+something about it).
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Hits during 24 hours&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/es-hits.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+If you want to deploy your applications to Kubernetes, sooner or later you need
+to think about how to solve storage and persistence.&lt;/p&gt;
+
+&lt;p&gt;Kubernetes is a distributed cluster where nodes and pods comes and goes. We
+don&amp;rsquo;t want to solve our persistence problem for a single node, we want to solve
+it for the whole cluster. That&amp;rsquo;s where Kubernetes Volumes comes in. A quick look
+at the different &lt;a href=&#34;http://kubernetes.io/docs/user-guide/volumes/&#34;&gt;Volume Plugins&lt;/a&gt;
+that are available gives us the following alternatives:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;nfs&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;iscsi&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;glusterfs&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I wrote an earlier post about
+&lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;GlusterFS On Kubernetes-ARM&lt;/a&gt;.
+I still use &lt;code&gt;glustefs&lt;/code&gt; and it&amp;rsquo;s running on my &lt;code&gt;rpi-1&lt;/code&gt;
+boards, but the I/O performance isn&amp;rsquo;t enough for handling the logs from
+Fluentd that are stored in Elasticsearch. We need a bigger machinery.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve been looking for a board that have Gigabit Ethernet and SATA or
+USB 3, that can be used for handling persistence. But buying a board and some
+disks and configuring services, that sounds a lot like building your own NAS,
+and there are plenty of cheap NAS products out there that supports at least two
+of the alternatives on our list, &lt;code&gt;nfs&lt;/code&gt; and &lt;code&gt;iscsi&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I already own a home &lt;code&gt;NAS&lt;/code&gt; and it supports both &lt;code&gt;nfs&lt;/code&gt; and &lt;code&gt;iscsi&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;I created two different &lt;code&gt;PersistentVolume&lt;/code&gt;:s, one for each Volume Plugin, and
+mounted them in two different Elasticsearch data node pods, and suddenly, all the
+problems with Elasticsearch and Kibana is gone.&lt;/p&gt;
+
+&lt;h5 id=&#34;using-iscsi:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;Using iSCSI&lt;/h5&gt;
+
+&lt;p&gt;Installing &lt;code&gt;iSCSI&lt;/code&gt; Initiator in Arch Linux is rather straight forward:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ pacman -S --noconfirm open-iscsi
+$ systemctl enable open-iscsi.service
+$ systemctl restart open-iscsi.service
+$ iscsiadm -m discovery -t sendtargets -p &amp;lt;ip of your iscsi target&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You need to repeat the steps above for each node in your cluster and that&amp;rsquo;s it,
+if your not going to use &lt;code&gt;CHAP&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now we can create a &lt;code&gt;PersistentVolume&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lun0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  iscsi:
+    targetPortal: xxx.xxx.xxx.xxx:yyyy
+    iqn: &amp;lt;iqn-target&amp;gt;
+    lun: 0
+    fsType: ext4
+    readOnly: false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I leave it up to you to create a &lt;code&gt;PersistentVolumeClaim&lt;/code&gt; and mount it in to your
+pod.&lt;/p&gt;
+
+&lt;h4 id=&#34;to-sum-up:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;If you want to use your Kubernetes-On-ARM cluster for more advanced applications
+then you need to think about how to solve persistence.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve found a solution that suits my needs using &lt;code&gt;iscsi&lt;/code&gt; and &lt;code&gt;nfs&lt;/code&gt;, the only
+problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
+
+&lt;p&gt;Maybe it&amp;rsquo;s time to build
+&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>E(F)K cluster on Kubernetes-On-ARM - Part 2</title>
