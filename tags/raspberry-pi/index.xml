@@ -7,8 +7,30 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 12 May 2016 06:48:19 +0200</lastBuildDate>
+    <lastBuildDate>Thu, 14 Jul 2016 19:16:43 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/raspberry-pi/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Building your Kubernetes cluster in minutes</title>
+      <link>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</link>
+      <pubDate>Thu, 14 Jul 2016 19:16:43 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</guid>
+      <description>&lt;p&gt;With the release of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; there is now a cross platform way of
+quickly setting up a Kubernetes cluster using Docker.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;kube-deploy/docker-multinode&lt;/a&gt;
+uses two instances of Docker daemon.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve created a hybrid solution &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; that uses kube-deploy/docker-multinode but runs
+the kubelet &lt;em&gt;native&lt;/em&gt;. The reason for running your &lt;code&gt;kubelet&lt;/code&gt;:s &lt;em&gt;native&lt;/em&gt; is the full support of &lt;a href=&#34;http://kubernetes.io/docs/user-guide/persistent-volumes/&#34;&gt;Persistent Volumes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Sloop uses the best of two worlds. Docker for bootstrapping your cluster and &lt;em&gt;native&lt;/em&gt; kubelet for full Kubernetes functionality.&lt;/p&gt;
+
+&lt;p&gt;Give it a try and see what you think!
+&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Storage for your cluster</title>

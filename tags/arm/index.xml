@@ -7,8 +7,97 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 12 May 2016 06:48:19 +0200</lastBuildDate>
+    <lastBuildDate>Thu, 14 Jul 2016 19:16:43 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/arm/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Building your Kubernetes cluster in minutes</title>
+      <link>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</link>
+      <pubDate>Thu, 14 Jul 2016 19:16:43 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</guid>
+      <description>&lt;p&gt;With the release of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; there is now a cross platform way of
+quickly setting up a Kubernetes cluster using Docker.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;kube-deploy/docker-multinode&lt;/a&gt;
+uses two instances of Docker daemon.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve created a hybrid solution &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; that uses kube-deploy/docker-multinode but runs
+the kubelet &lt;em&gt;native&lt;/em&gt;. The reason for running your &lt;code&gt;kubelet&lt;/code&gt;:s &lt;em&gt;native&lt;/em&gt; is the full support of &lt;a href=&#34;http://kubernetes.io/docs/user-guide/persistent-volumes/&#34;&gt;Persistent Volumes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Sloop uses the best of two worlds. Docker for bootstrapping your cluster and &lt;em&gt;native&lt;/em&gt; kubelet for full Kubernetes functionality.&lt;/p&gt;
+
+&lt;p&gt;Give it a try and see what you think!
+&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Ingress Resources, the final piece of the puzzle?</title>
+      <link>http://larmog.github.io/2016/05/19/ingress-resources-the-final-piece-of-the-puzzle/</link>
+      <pubDate>Thu, 19 May 2016 13:29:40 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/05/19/ingress-resources-the-final-piece-of-the-puzzle/</guid>
+      <description>
+
+&lt;p&gt;I&amp;rsquo;ve been using service-loadbalancer in my cluster and annotated my services to
+make them available outside the cluster network. With the release of Kubernetes
+1.2 there is another alternative, the Ingress Resources.&lt;/p&gt;
+
+&lt;p&gt;You can read more about the Ingress resource in the &lt;a href=&#34;http://kubernetes.io/docs/user-guide/ingress/&#34;&gt;Kubernetes Reference Documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve always felt that there&amp;rsquo;s been something missing in Kubernetes when it comes
+to exposing services. There has been multiple ways of doing it, and it&amp;rsquo;s
+been up to you or your Kubernetes provider to decide how. You can use the
+&lt;code&gt;service-loadbalancer&lt;/code&gt; method but it&amp;rsquo;s a bit messy. You need to keep
+track of your annotations, and I personally think that they shouldn&amp;rsquo;t be there
+in the first place. With the Ingress Resource you get a clear separation between
+your service, and how you expose the service outside your cluster.&lt;/p&gt;
+
+&lt;h4 id=&#34;ingress-controller:ebff967dba27d185454e1bb8a30150d3&#34;&gt;Ingress controller&lt;/h4&gt;
+
+&lt;p&gt;Creating an Ingress without an Ingress controller will have no effect. So we
+first need to install a controller. You can read more about Ingress controllers
+&lt;a href=&#34;https://github.com/kubernetes/contrib/tree/master/ingress/controllers&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;There is a &lt;code&gt;nginx-ingress-controller&lt;/code&gt; in the
+&lt;a href=&#34;https://github.com/kubernetes/contrib&#34;&gt;contrib&lt;/a&gt; repository and an image
+&lt;code&gt;gcr.io/google_containers/nginx-ingress-controller&lt;/code&gt;. If you read any of my
+earlier &lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;posts&lt;/a&gt;, then you know
+that I&amp;rsquo;m running &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;&lt;code&gt;Kubernetes-On-ARM&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;There is no official &lt;code&gt;nginx-ingress-controller-arm&lt;/code&gt; image yet, but if you want
+you can use mine. I&amp;rsquo;ve built the same image chain as the
+&lt;code&gt;nginx-ingress-controller&lt;/code&gt;, but for &lt;code&gt;armhf&lt;/code&gt;. Here&amp;rsquo;s the image chain:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/kodbasen/ubuntu-slim-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/ubuntu-slim-armhf/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/kodbasen/nginx-slim-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/nginx-slim-armhf/&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://hub.docker.com/r/kodbasen/nginx-ingress-controller-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/nginx-ingress-controller-armhf/&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I&amp;rsquo;ve also built the &lt;code&gt;defaultbackend-armhf&lt;/code&gt; image:
+&lt;a href=&#34;https://hub.docker.com/r/kodbasen/defaultbackend-armhf/&#34;&gt;https://hub.docker.com/r/kodbasen/defaultbackend-armhf/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;All you need to do is to change the images in the &lt;code&gt;rc.yaml&lt;/code&gt; file:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;wget -q https://raw.githubusercontent.com/kubernetes/contrib/master/ingress/controllers/nginx/rc.yaml \
+&amp;amp;&amp;amp; sed -i -e &amp;quot;s;gcr\.io/google_containers/nginx-ingress-controller;kodbasen/nginx-ingress-controller-armhf;&amp;quot; &amp;quot;rc.yaml&amp;quot; \
+&amp;amp;&amp;amp; sed -i -e &amp;quot;s;gcr\.io/google_containers/defaultbackend;kodbasen/defaultbackend-armhf;&amp;quot; &amp;quot;rc.yaml&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now your ready to deploy your &lt;code&gt;nginx-ingress-controller-armhf&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl create -f rc.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;That&amp;rsquo;s it, you can now start experimenting with &lt;strong&gt;Ingress Resources&lt;/strong&gt; on
+&lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;&lt;code&gt;Kubernetes-On-ARM&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Ingress Resources is maybe the final piece of the puzzle, to make Kubernetes
+totally awesome. What do you think?&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Storage for your cluster</title>
