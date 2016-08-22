@@ -85,7 +85,7 @@ on <a href="http://blog.hypriot.com/">HypriotOS</a>.</p>
 
 <p>In this post I will try to summarize my experiences so far.</p>
 
-<h5 id="dind-and-kubelet-does-not-play-well-together:38dbe607a3f0a33b702c4d61c17d021b">Dind and Kubelet does not play well together</h5>
+<h5 id="dind-and-kubelet-does-not-play-well-together">Dind and Kubelet does not play well together</h5>
 
 <p>One of the reasons that I wanted to run Drone was it’s use of Docker, and to
 build and push docker images to a registry. Drone has a plugin that does all
@@ -144,7 +144,7 @@ this will hopefully be resolved in Kubernetes 1.2. Meantime, the solution is,
 to remove one of the nodes from the Kubernetes cluster and use it as a remote
 worker-node in Drone.</p>
 
-<h5 id="containerized-kubelet:38dbe607a3f0a33b702c4d61c17d021b">Containerized Kubelet</h5>
+<h5 id="containerized-kubelet">Containerized Kubelet</h5>
 
 <p>There are issues, when running the <code>kubelet</code> in a container, and is work in
 progress, to resolve those issues.</p>
@@ -154,7 +154,7 @@ progress, to resolve those issues.</p>
 <li><a href="https://github.com/kubernetes/kubernetes/issues/14403">https://github.com/kubernetes/kubernetes/issues/14403</a></li>
 </ul>
 
-<h5 id="glusterfs-usb-and-100mbit-ethernet-network:38dbe607a3f0a33b702c4d61c17d021b">Glusterfs USB and 100Mbit/Ethernet network</h5>
+<h5 id="glusterfs-usb-and-100mbit-ethernet-network">Glusterfs USB and 100Mbit/Ethernet network</h5>
 
 <p>I’ve been wanting to try out <a href="http://go.cd">Go CD</a> for some time now, and try to set up a pipeline on Kubernetes. If you take a look at the <a href="https://docs.go.cd/current/installation/system_requirements.html">system requirements</a> for Go CD, you will see that this is not suitable for a Raspberry Pi. The Go Server is a giant monolith, but what the heck, sometimes you need to check out the limit. I created a Docker image for ARM and tried to start up a pod.</p>
 
@@ -164,7 +164,7 @@ start and I measured the read/write speed on the glusterfs to around 1,5-2 MB/s.
 One should not expect any great performance when running <code>glusterfs</code> on
 <em>Raspberry Pi</em>. There are some real bottlenecks on network and USB.</p>
 
-<h5 id="upgrading-to-docker-v1-10-2:38dbe607a3f0a33b702c4d61c17d021b">Upgrading to Docker v1.10.2</h5>
+<h5 id="upgrading-to-docker-v1-10-2">Upgrading to Docker v1.10.2</h5>
 
 <p>The <em>Hypriot</em> team has written a post about <a href="http://blog.hypriot.com/post/test-build-and-package-docker-for-arm-the-official-way/">Test, build and package Docker for ARM the official way</a>.
 That was one of reasons why I wanted to upgrade Docker to <code>v1.10.2</code>.
@@ -180,7 +180,7 @@ anymore and is reported here:</p>
 <li><a href="https://github.com/fsouza/go-dockerclient/issues/455">https://github.com/fsouza/go-dockerclient/issues/455</a></li>
 </ul>
 
-<h5 id="summarize:38dbe607a3f0a33b702c4d61c17d021b">Summarize</h5>
+<h5 id="summarize">Summarize</h5>
 
 <p>Running <em>Kubernetes-On-ARM</em> together with new releases of <em>Docker</em> is nothing
 for the faint hearted. There are some issues that hopefully will be resolved in

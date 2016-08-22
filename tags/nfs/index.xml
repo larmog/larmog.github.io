@@ -73,7 +73,7 @@ of the alternatives on our list, &lt;code&gt;nfs&lt;/code&gt; and &lt;code&gt;is
 mounted them in two different Elasticsearch data node pods, and suddenly, all the
 problems with Elasticsearch and Kibana is gone.&lt;/p&gt;
 
-&lt;h5 id=&#34;using-iscsi:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;Using iSCSI&lt;/h5&gt;
+&lt;h5 id=&#34;using-iscsi&#34;&gt;Using iSCSI&lt;/h5&gt;
 
 &lt;p&gt;Installing &lt;code&gt;iSCSI&lt;/code&gt; Initiator in Arch Linux is rather straight forward:&lt;/p&gt;
 
@@ -109,7 +109,7 @@ spec:
 &lt;p&gt;I leave it up to you to create a &lt;code&gt;PersistentVolumeClaim&lt;/code&gt; and mount it in to your
 pod.&lt;/p&gt;
 
-&lt;h4 id=&#34;to-sum-up:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;To sum up&lt;/h4&gt;
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
 
 &lt;p&gt;If you want to use your Kubernetes-On-ARM cluster for more advanced applications
 then you need to think about how to solve persistence.&lt;/p&gt;

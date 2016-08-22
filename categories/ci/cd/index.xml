@@ -27,19 +27,19 @@
 
 &lt;p&gt;The plugin kicks off every build in a new &lt;code&gt;pod&lt;/code&gt; and tears it down when the build is complete. This means that every build is clean and reproducible. This is clearly something that we want in &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;before-we-begin:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Before we begin&lt;/h5&gt;
+&lt;h5 id=&#34;before-we-begin&#34;&gt;Before we begin&lt;/h5&gt;
 
 &lt;p&gt;There is now support for multiple platforms with the relase of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt;, &lt;code&gt;arm&lt;/code&gt; and &lt;code&gt;arm64&lt;/code&gt; being two of them. There is also a side project: &lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;&lt;code&gt;kube-deploy/docker-multinode&lt;/code&gt;&lt;/a&gt; that lets you setup a Kubernetes cluster in minutes, using docker.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; - is my project that uses &lt;code&gt;kube-deploy/docker-multinode&lt;/code&gt; for running Kubernetes &lt;em&gt;&amp;ldquo;native&amp;rdquo;&lt;/em&gt;. You can read more about it in an earlier post &lt;a href=&#34;http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/&#34;&gt;Building your Kubernetes cluster in minutes&lt;/a&gt;. You&amp;rsquo;re more than welcome to check(it)out and give it a try.&lt;/p&gt;
 
-&lt;h6 id=&#34;prerequisites:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Prerequisites&lt;/h6&gt;
+&lt;h6 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h6&gt;
 
 &lt;ul&gt;
 &lt;li&gt;A Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; cluster with &lt;code&gt;arm&lt;/code&gt; or &lt;code&gt;arm64&lt;/code&gt; nodes.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&#34;setting-up-jenkins:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Setting up Jenkins&lt;/h5&gt;
+&lt;h5 id=&#34;setting-up-jenkins&#34;&gt;Setting up Jenkins&lt;/h5&gt;
 
 &lt;p&gt;The Jenkins master keeps state and needs a durable volume for storing
 data about your builds. I highly recommend using something other than &lt;code&gt;emptyDir&lt;/code&gt; or &lt;code&gt;hostPath&lt;/code&gt;. I use a &lt;code&gt;nfs&lt;/code&gt; volume.&lt;/p&gt;
@@ -111,7 +111,7 @@ spec:
 
 &lt;p&gt;You should now have Jenkins up and running. Now check your Jenkins &lt;code&gt;pod&lt;/code&gt; log and copy the &lt;em&gt;first time password&lt;/em&gt; and head over to Jenkins to set it up, and while your there, install the Kubernetes plugin. Come back here when your done and I&amp;rsquo;ll show you how to setup the plugin.&lt;/p&gt;
 
-&lt;h5 id=&#34;setting-up-jenkins-kubernetes-plugin:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Setting up Jenkins Kubernetes plugin&lt;/h5&gt;
+&lt;h5 id=&#34;setting-up-jenkins-kubernetes-plugin&#34;&gt;Setting up Jenkins Kubernetes plugin&lt;/h5&gt;
 
 &lt;p&gt;The Kubernetes plugin uses a &lt;code&gt;slave&lt;/code&gt; image and a &lt;code&gt;pod&lt;/code&gt;-template so there´s
 not much for you to configure. Follow the instruction on the plugin &lt;a href=&#34;https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+Plugin&#34;&gt;page&lt;/a&gt; but use &lt;a href=&#34;https://hub.docker.com/r/kodbasen/jenkins-slave-arm/&#34;&gt;kodbasen/jenkins-slave-arm&lt;/a&gt; image as &lt;em&gt;Docker image&lt;/em&gt;.
@@ -154,7 +154,7 @@ not much for you to configure. Follow the instruction on the plugin &lt;a href=&
 
 &lt;/p&gt;
 
-&lt;h5 id=&#34;running-docker-builds:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Running Docker builds&lt;/h5&gt;
+&lt;h5 id=&#34;running-docker-builds&#34;&gt;Running Docker builds&lt;/h5&gt;
 
 &lt;p&gt;If you wan&amp;rsquo;t to run docker builds on Jenkins theres another slave image that you can use: &lt;a href=&#34;https://hub.docker.com/r/kodbasen/jenkins-docker-slave-arm/&#34;&gt;kodbasen/jenkins-docker-slave-arm&lt;/a&gt;. This image includes the docker binaries and runs docker builds on the host where the pod is running. For this to
 work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
@@ -177,7 +177,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;/p&gt;
 
-&lt;h5 id=&#34;running-your-builds:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Running your builds&lt;/h5&gt;
+&lt;h5 id=&#34;running-your-builds&#34;&gt;Running your builds&lt;/h5&gt;
 
 &lt;p&gt;When running your build you&amp;rsquo;ll se the build pending while the slave is provisioned.
 
@@ -201,7 +201,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;p&gt;You can control which nodes should be used for running builds using a &lt;code&gt;nodeSelector&lt;/code&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;conclusion:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Conclusion&lt;/h5&gt;
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
 &lt;p&gt;I&amp;rsquo;ve started moving all my builds from Drone over to Jenkins. If you decide to give Jenkins a try, and you&amp;rsquo;re using &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt;, let me know how it goes.&lt;/p&gt;
 

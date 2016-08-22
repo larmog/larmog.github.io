@@ -87,19 +87,19 @@
 
 <p>The plugin kicks off every build in a new <code>pod</code> and tears it down when the build is complete. This means that every build is clean and reproducible. This is clearly something that we want in <em>Kubernetes-On-ARM</em>.</p>
 
-<h5 id="before-we-begin:25f44cd508d63589bb581c03a4d68b48">Before we begin</h5>
+<h5 id="before-we-begin">Before we begin</h5>
 
 <p>There is now support for multiple platforms with the relase of Kubernetes <code>v1.3.0</code>, <code>arm</code> and <code>arm64</code> being two of them. There is also a side project: <a href="https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode"><code>kube-deploy/docker-multinode</code></a> that lets you setup a Kubernetes cluster in minutes, using docker.</p>
 
 <p><a href="https://github.com/kodbasen/sloop">Sloop</a> - is my project that uses <code>kube-deploy/docker-multinode</code> for running Kubernetes <em>&ldquo;native&rdquo;</em>. You can read more about it in an earlier post <a href="/2016/07/14/building-your-kubernetes-cluster-in-minutes/">Building your Kubernetes cluster in minutes</a>. You&rsquo;re more than welcome to check(it)out and give it a try.</p>
 
-<h6 id="prerequisites:25f44cd508d63589bb581c03a4d68b48">Prerequisites</h6>
+<h6 id="prerequisites">Prerequisites</h6>
 
 <ul>
 <li>A Kubernetes <code>v1.3.0</code> cluster with <code>arm</code> or <code>arm64</code> nodes.</li>
 </ul>
 
-<h5 id="setting-up-jenkins:25f44cd508d63589bb581c03a4d68b48">Setting up Jenkins</h5>
+<h5 id="setting-up-jenkins">Setting up Jenkins</h5>
 
 <p>The Jenkins master keeps state and needs a durable volume for storing
 data about your builds. I highly recommend using something other than <code>emptyDir</code> or <code>hostPath</code>. I use a <code>nfs</code> volume.</p>
@@ -171,7 +171,7 @@ spec:
 
 <p>You should now have Jenkins up and running. Now check your Jenkins <code>pod</code> log and copy the <em>first time password</em> and head over to Jenkins to set it up, and while your there, install the Kubernetes plugin. Come back here when your done and I&rsquo;ll show you how to setup the plugin.</p>
 
-<h5 id="setting-up-jenkins-kubernetes-plugin:25f44cd508d63589bb581c03a4d68b48">Setting up Jenkins Kubernetes plugin</h5>
+<h5 id="setting-up-jenkins-kubernetes-plugin">Setting up Jenkins Kubernetes plugin</h5>
 
 <p>The Kubernetes plugin uses a <code>slave</code> image and a <code>pod</code>-template so there´s
 not much for you to configure. Follow the instruction on the plugin <a href="https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+Plugin">page</a> but use <a href="https://hub.docker.com/r/kodbasen/jenkins-slave-arm/">kodbasen/jenkins-slave-arm</a> image as <em>Docker image</em>.
@@ -214,7 +214,7 @@ not much for you to configure. Follow the instruction on the plugin <a href="htt
 
 </p>
 
-<h5 id="running-docker-builds:25f44cd508d63589bb581c03a4d68b48">Running Docker builds</h5>
+<h5 id="running-docker-builds">Running Docker builds</h5>
 
 <p>If you wan&rsquo;t to run docker builds on Jenkins theres another slave image that you can use: <a href="https://hub.docker.com/r/kodbasen/jenkins-docker-slave-arm/">kodbasen/jenkins-docker-slave-arm</a>. This image includes the docker binaries and runs docker builds on the host where the pod is running. For this to
 work you need to mount three <code>hostPath</code> volumes:
@@ -237,7 +237,7 @@ work you need to mount three <code>hostPath</code> volumes:
 
 </p>
 
-<h5 id="running-your-builds:25f44cd508d63589bb581c03a4d68b48">Running your builds</h5>
+<h5 id="running-your-builds">Running your builds</h5>
 
 <p>When running your build you&rsquo;ll se the build pending while the slave is provisioned.
 
@@ -261,7 +261,7 @@ work you need to mount three <code>hostPath</code> volumes:
 
 <p>You can control which nodes should be used for running builds using a <code>nodeSelector</code>.</p>
 
-<h5 id="conclusion:25f44cd508d63589bb581c03a4d68b48">Conclusion</h5>
+<h5 id="conclusion">Conclusion</h5>
 
 <p>I&rsquo;ve started moving all my builds from Drone over to Jenkins. If you decide to give Jenkins a try, and you&rsquo;re using <a href="https://github.com/kodbasen/sloop">Sloop</a>, let me know how it goes.</p>
 
@@ -347,7 +347,7 @@ work you need to mount three <code>hostPath</code> volumes:
     <div class="row">
       <div class="col s3 m1">
       
-        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/"><i class="mdi-navigation-arrow-back"></i></a>
       
       </div>
       <div class="col s6 m10 center">&nbsp</div>

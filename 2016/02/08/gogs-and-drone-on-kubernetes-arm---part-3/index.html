@@ -102,7 +102,7 @@ containers. This makes it a bit problematic running Drone on ARM because we
 need to rebuild everything, from Drone it self to all plugins that we wan&rsquo;t to
 use. We need to setup a Drone infrastructure for ARM, <strong>or so I thought&hellip;</strong></p>
 
-<h5 id="on-the-shoulder-of-others:45fd2cf7d6daaa0f28a943db69cd162c">On the shoulder of others</h5>
+<h5 id="on-the-shoulder-of-others">On the shoulder of others</h5>
 
 <p>Fortunately before I jumped in to the <em>rabbit hole</em>, not knowing if it was a
 dead end, I found two different initiatives for running Drone on ARM. You can
@@ -113,7 +113,7 @@ read more about it here:
 <a href="https://github.com/armhf-docker-library/drone">armhf-docker-library/drone</a> and
 I also found this example from Greg Taylor: <a href="https://github.com/drone-demos/drone-on-kubernetes/">drone-on-kubernetes</a>.</p>
 
-<h5 id="lets-get-started:45fd2cf7d6daaa0f28a943db69cd162c">Lets get started</h5>
+<h5 id="lets-get-started">Lets get started</h5>
 
 <p>First we need to create persistent volume for our sqlite database:</p>
 
@@ -252,7 +252,7 @@ kubernetes   10.0.0.1     &lt;none&gt;        443/TCP    &lt;none&gt;         29
 <code>ha-proxy</code> status page, and you should be able to login with your <em>Gogs</em>
 account.</p>
 
-<h5 id="ca-and-pki-infrastructure:45fd2cf7d6daaa0f28a943db69cd162c">CA and PKI infrastructure</h5>
+<h5 id="ca-and-pki-infrastructure">CA and PKI infrastructure</h5>
 
 <p>If your using your own CA and PKI infrastructure and a service-loadbalancer,
 then there is a couple of things you need to do. When you have activated a
@@ -328,14 +328,14 @@ a bit of a hack.
 
 
 
-<h5 id="conclusion:45fd2cf7d6daaa0f28a943db69cd162c">Conclusion</h5>
+<h5 id="conclusion">Conclusion</h5>
 
 <p>This concludes our series about running Gogs and Drone on Kubernetes-ARM.
 Thanks to the excellent job done by others, it is a rather straight forward
 process to set it up. I hope you liked the series and hope you&rsquo;ve picked up
 something you didn&rsquo;t know before. Now I&rsquo;m off to learn some more about <em>Drone</em>.</p>
 
-<h5 id="finally:45fd2cf7d6daaa0f28a943db69cd162c">Finally</h5>
+<h5 id="finally">Finally</h5>
 
 <p>Some useful links:</p>
 

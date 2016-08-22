@@ -42,7 +42,7 @@ containers. This makes it a bit problematic running Drone on ARM because we
 need to rebuild everything, from Drone it self to all plugins that we wan&amp;rsquo;t to
 use. We need to setup a Drone infrastructure for ARM, &lt;strong&gt;or so I thought&amp;hellip;&lt;/strong&gt;&lt;/p&gt;
 
-&lt;h5 id=&#34;on-the-shoulder-of-others:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;On the shoulder of others&lt;/h5&gt;
+&lt;h5 id=&#34;on-the-shoulder-of-others&#34;&gt;On the shoulder of others&lt;/h5&gt;
 
 &lt;p&gt;Fortunately before I jumped in to the &lt;em&gt;rabbit hole&lt;/em&gt;, not knowing if it was a
 dead end, I found two different initiatives for running Drone on ARM. You can
@@ -53,7 +53,7 @@ read more about it here:
 &lt;a href=&#34;https://github.com/armhf-docker-library/drone&#34;&gt;armhf-docker-library/drone&lt;/a&gt; and
 I also found this example from Greg Taylor: &lt;a href=&#34;https://github.com/drone-demos/drone-on-kubernetes/&#34;&gt;drone-on-kubernetes&lt;/a&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;lets-get-started:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Lets get started&lt;/h5&gt;
+&lt;h5 id=&#34;lets-get-started&#34;&gt;Lets get started&lt;/h5&gt;
 
 &lt;p&gt;First we need to create persistent volume for our sqlite database:&lt;/p&gt;
 
@@ -192,7 +192,7 @@ kubernetes   10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&am
 &lt;code&gt;ha-proxy&lt;/code&gt; status page, and you should be able to login with your &lt;em&gt;Gogs&lt;/em&gt;
 account.&lt;/p&gt;
 
-&lt;h5 id=&#34;ca-and-pki-infrastructure:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;CA and PKI infrastructure&lt;/h5&gt;
+&lt;h5 id=&#34;ca-and-pki-infrastructure&#34;&gt;CA and PKI infrastructure&lt;/h5&gt;
 
 &lt;p&gt;If your using your own CA and PKI infrastructure and a service-loadbalancer,
 then there is a couple of things you need to do. When you have activated a
@@ -268,14 +268,14 @@ a bit of a hack.
 
 
 
-&lt;h5 id=&#34;conclusion:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Conclusion&lt;/h5&gt;
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
 &lt;p&gt;This concludes our series about running Gogs and Drone on Kubernetes-ARM.
 Thanks to the excellent job done by others, it is a rather straight forward
 process to set it up. I hope you liked the series and hope you&amp;rsquo;ve picked up
 something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some more about &lt;em&gt;Drone&lt;/em&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;finally:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Finally&lt;/h5&gt;
+&lt;h5 id=&#34;finally&#34;&gt;Finally&lt;/h5&gt;
 
 &lt;p&gt;Some useful links:&lt;/p&gt;
 

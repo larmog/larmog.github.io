@@ -52,7 +52,7 @@ and add metadata from &lt;code&gt;Kubernetes&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;If you haven&amp;rsquo;t upgraded to &lt;code&gt;Kubernetes-On-ARM v0.7.0&lt;/code&gt; and &lt;code&gt;Kubernetes 1.2&lt;/code&gt;, do
 that first.&lt;/p&gt;
 
-&lt;h4 id=&#34;upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2&lt;/h4&gt;
+&lt;h4 id=&#34;upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2&#34;&gt;Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2&lt;/h4&gt;
 
 &lt;p&gt;I have created images for &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt; that can be found here:&lt;/p&gt;
 
@@ -72,7 +72,7 @@ $ kubectl delete -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/mast
 $ kubectl create -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h4 id=&#34;collecting-journald-logs:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Collecting journald logs&lt;/h4&gt;
+&lt;h4 id=&#34;collecting-journald-logs&#34;&gt;Collecting journald logs&lt;/h4&gt;
 
 &lt;p&gt;I found this solution from &lt;a href=&#34;https://github.com/ianblenke/docker-fluentd/tree/master/systemd&#34;&gt;ianblenke&lt;/a&gt;
 and I have created a repo here: &lt;a href=&#34;https://github.com/kodbasen/fluentd-kubernetes&#34;&gt;fluentd-kubernetes&lt;/a&gt;.&lt;/p&gt;
@@ -168,7 +168,7 @@ in &lt;code&gt;elasticsearch&lt;/code&gt;.&lt;/p&gt;
 
 &lt;/p&gt;
 
-&lt;h4 id=&#34;to-sum-up:067b7f7d4fc16bce7784c9369d044678&#34;&gt;To sum up&lt;/h4&gt;
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
 
 &lt;p&gt;Now we can collect logs from both &lt;code&gt;PODS&lt;/code&gt; and &lt;code&gt;nodes&lt;/code&gt;. But you will soon discover
 that our nodes generates a huge amount of logs. Basically were running the same

@@ -110,7 +110,7 @@ and add metadata from <code>Kubernetes</code>.</p>
 <p>If you haven&rsquo;t upgraded to <code>Kubernetes-On-ARM v0.7.0</code> and <code>Kubernetes 1.2</code>, do
 that first.</p>
 
-<h4 id="upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2:067b7f7d4fc16bce7784c9369d044678">Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2</h4>
+<h4 id="upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2">Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2</h4>
 
 <p>I have created images for <code>elasticsearch</code> and <code>kibana</code> that can be found here:</p>
 
@@ -130,7 +130,7 @@ $ kubectl delete -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/mast
 $ kubectl create -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
 </code></pre>
 
-<h4 id="collecting-journald-logs:067b7f7d4fc16bce7784c9369d044678">Collecting journald logs</h4>
+<h4 id="collecting-journald-logs">Collecting journald logs</h4>
 
 <p>I found this solution from <a href="https://github.com/ianblenke/docker-fluentd/tree/master/systemd">ianblenke</a>
 and I have created a repo here: <a href="https://github.com/kodbasen/fluentd-kubernetes">fluentd-kubernetes</a>.</p>
@@ -226,7 +226,7 @@ in <code>elasticsearch</code>.</p>
 
 </p>
 
-<h4 id="to-sum-up:067b7f7d4fc16bce7784c9369d044678">To sum up</h4>
+<h4 id="to-sum-up">To sum up</h4>
 
 <p>Now we can collect logs from both <code>PODS</code> and <code>nodes</code>. But you will soon discover
 that our nodes generates a huge amount of logs. Basically were running the same

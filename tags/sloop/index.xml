@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sloop on kodbasen</title>
+    <link>http://larmog.github.io/tags/sloop/</link>
+    <description>Recent content in Sloop on kodbasen</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Copyright © 2016 by larmog</copyright>
+    <lastBuildDate>Wed, 17 Aug 2016 20:48:11 +0200</lastBuildDate>
+    <atom:link href="http://larmog.github.io/tags/sloop/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Setting up Kubernetes on Scaleway - Part 1</title>
+      <link>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</link>
+      <pubDate>Wed, 17 Aug 2016 20:48:11 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</guid>
+      <description>
+
+&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+&lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This post is the first in a series on setting up Kubernetes using the bare-metal cloud provider Scaleway. Scaleway offers bare-metal servers both for ARM and x86-64. I will show how to
+set up Kubernetes on ARM using the Scaleway C1 server.&lt;/p&gt;
+
+&lt;h5 id=&#34;disclaimer&#34;&gt;Disclaimer&lt;/h5&gt;
+
+&lt;p&gt;This work is done to the best of my ability, but you should know that i&amp;rsquo;m new to Scaleway and i&amp;rsquo;m writing this in my spare time, and sometimes in a haste. See it as an inspiration. Your feedback is always welcome.&lt;/p&gt;
+
+&lt;h5 id=&#34;creating-servers&#34;&gt;Creating servers&lt;/h5&gt;
+
+&lt;p&gt;First you need to sign up for a Scaleway account. Then head over to the &lt;strong&gt;Servers&lt;/strong&gt; page and create two C1 servers. Select the Docker image from &lt;em&gt;ImageHub&lt;/em&gt; and make sure you assign a public IP for both servers.&lt;/p&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Creating a C1 Docker ready server for Kubernetes.&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/scw-c1-server.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;h5 id=&#34;fixing-missing-link&#34;&gt;Fixing missing link&lt;/h5&gt;
+
+&lt;p&gt;I had some problems with the dynamic link interpreter for the &lt;code&gt;hyperkube&lt;/code&gt; binary, but creating this link on both servers fixes the problem.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-xxxxx:~# cd /lib
+root@scw-xxxxx:/lib# ln -s arm-linux-gnueabihf/ld-2.23.so ld-linux.so.3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;cloning-sloop&#34;&gt;Cloning Sloop&lt;/h5&gt;
+
+&lt;p&gt;You know what Sloop is right? If not take a quick look at this earlier post: &lt;a href=&#34;http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/&#34;&gt;Building your Kubernetes cluster in minutes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Clone the &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; project on both servers and
+create a &lt;code&gt;sloop.conf&lt;/code&gt; file in the Sloop directory that looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;K8S_VERSION=v1.3.5
+FLANNEL_NETWORK=10.10.0.0/16
+FLANNEL_BACKEND=host-gw
+
+# This entry is only required on your workers
+MASTER_IP=&amp;lt;your master server Public-IP&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;MASTER_IP&lt;/code&gt; should only be set on your worker(s).&lt;/p&gt;
+
+&lt;h5 id=&#34;securing-your-environment&#34;&gt;Securing your environment&lt;/h5&gt;
+
+&lt;p&gt;Scaleway offers &lt;em&gt;Security&lt;/em&gt; for your network through static IP package inspection. Your rules are configured in a &lt;em&gt;security group&lt;/em&gt;. The problem is that you can&amp;rsquo;t have a default rule that matches and blocks all inbound traffic last in the list, and only add specific ports.&lt;/p&gt;
+
+&lt;p&gt;You need to add rules for all ports you want to drop traffic on and add your server to the top of the list with a rule that accepts all traffic.
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Security Group rules&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/scw-security-group-rules.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;h5 id=&#34;starting-your-master&#34;&gt;Starting your master&lt;/h5&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to start up your master:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~/sloop# ./sloop-master.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can verify that your master is running using &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1m
+root@scw-master:~#
+root@scw-master:~#
+root@scw-master:~# kubectl cluster-info
+Kubernetes master is running at http://localhost:8080
+KubeDNS is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kube-dns
+kubernetes-dashboard is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;starting-your-worker-s&#34;&gt;Starting your worker(s)&lt;/h5&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to bring up your worker:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-worker:~/sloop# ./sloop-worker.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you switch back to your &lt;code&gt;scw-master&lt;/code&gt; server and run &lt;code&gt;kubectl get nodes&lt;/code&gt; you
+should see two nodes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~/sloop# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1d
+10.1.xxx.xxx   Ready     1d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;verify-that-everything-works&#34;&gt;Verify that everything works&lt;/h5&gt;
+
+&lt;p&gt;Your &lt;code&gt;api-server&lt;/code&gt; is unprotectd and we added a rule to our &lt;em&gt;Security Group&lt;/em&gt; to block all trafic on port &lt;code&gt;8080&lt;/code&gt;, but you can verify that everything works by accessing the
+&lt;code&gt;dashboard&lt;/code&gt; on &lt;code&gt;http://&amp;lt;MASTER-PUBLIC-IP&amp;gt;:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard&lt;/code&gt;, if you remove the rule.&lt;/p&gt;
+
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
+
+&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

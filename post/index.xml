@@ -7,8 +7,145 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Tue, 26 Jul 2016 08:48:47 +0200</lastBuildDate>
+    <lastBuildDate>Wed, 17 Aug 2016 20:48:11 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Setting up Kubernetes on Scaleway - Part 1</title>
+      <link>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</link>
+      <pubDate>Wed, 17 Aug 2016 20:48:11 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</guid>
+      <description>
+
+&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+&lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;This post is the first in a series on setting up Kubernetes using the bare-metal cloud provider Scaleway. Scaleway offers bare-metal servers both for ARM and x86-64. I will show how to
+set up Kubernetes on ARM using the Scaleway C1 server.&lt;/p&gt;
+
+&lt;h5 id=&#34;disclaimer&#34;&gt;Disclaimer&lt;/h5&gt;
+
+&lt;p&gt;This work is done to the best of my ability, but you should know that i&amp;rsquo;m new to Scaleway and i&amp;rsquo;m writing this in my spare time, and sometimes in a haste. See it as an inspiration. Your feedback is always welcome.&lt;/p&gt;
+
+&lt;h5 id=&#34;creating-servers&#34;&gt;Creating servers&lt;/h5&gt;
+
+&lt;p&gt;First you need to sign up for a Scaleway account. Then head over to the &lt;strong&gt;Servers&lt;/strong&gt; page and create two C1 servers. Select the Docker image from &lt;em&gt;ImageHub&lt;/em&gt; and make sure you assign a public IP for both servers.&lt;/p&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Creating a C1 Docker ready server for Kubernetes.&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/scw-c1-server.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;h5 id=&#34;fixing-missing-link&#34;&gt;Fixing missing link&lt;/h5&gt;
+
+&lt;p&gt;I had some problems with the dynamic link interpreter for the &lt;code&gt;hyperkube&lt;/code&gt; binary, but creating this link on both servers fixes the problem.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-xxxxx:~# cd /lib
+root@scw-xxxxx:/lib# ln -s arm-linux-gnueabihf/ld-2.23.so ld-linux.so.3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;cloning-sloop&#34;&gt;Cloning Sloop&lt;/h5&gt;
+
+&lt;p&gt;You know what Sloop is right? If not take a quick look at this earlier post: &lt;a href=&#34;http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/&#34;&gt;Building your Kubernetes cluster in minutes&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Clone the &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; project on both servers and
+create a &lt;code&gt;sloop.conf&lt;/code&gt; file in the Sloop directory that looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;K8S_VERSION=v1.3.5
+FLANNEL_NETWORK=10.10.0.0/16
+FLANNEL_BACKEND=host-gw
+
+# This entry is only required on your workers
+MASTER_IP=&amp;lt;your master server Public-IP&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;MASTER_IP&lt;/code&gt; should only be set on your worker(s).&lt;/p&gt;
+
+&lt;h5 id=&#34;securing-your-environment&#34;&gt;Securing your environment&lt;/h5&gt;
+
+&lt;p&gt;Scaleway offers &lt;em&gt;Security&lt;/em&gt; for your network through static IP package inspection. Your rules are configured in a &lt;em&gt;security group&lt;/em&gt;. The problem is that you can&amp;rsquo;t have a default rule that matches and blocks all inbound traffic last in the list, and only add specific ports.&lt;/p&gt;
+
+&lt;p&gt;You need to add rules for all ports you want to drop traffic on and add your server to the top of the list with a rule that accepts all traffic.
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Security Group rules&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/scw-security-group-rules.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+&lt;/p&gt;
+
+&lt;h5 id=&#34;starting-your-master&#34;&gt;Starting your master&lt;/h5&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to start up your master:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~/sloop# ./sloop-master.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can verify that your master is running using &lt;code&gt;kubectl&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1m
+root@scw-master:~#
+root@scw-master:~#
+root@scw-master:~# kubectl cluster-info
+Kubernetes master is running at http://localhost:8080
+KubeDNS is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kube-dns
+kubernetes-dashboard is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;starting-your-worker-s&#34;&gt;Starting your worker(s)&lt;/h5&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to bring up your worker:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-worker:~/sloop# ./sloop-worker.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you switch back to your &lt;code&gt;scw-master&lt;/code&gt; server and run &lt;code&gt;kubectl get nodes&lt;/code&gt; you
+should see two nodes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;root@scw-master:~/sloop# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1d
+10.1.xxx.xxx   Ready     1d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;verify-that-everything-works&#34;&gt;Verify that everything works&lt;/h5&gt;
+
+&lt;p&gt;Your &lt;code&gt;api-server&lt;/code&gt; is unprotectd and we added a rule to our &lt;em&gt;Security Group&lt;/em&gt; to block all trafic on port &lt;code&gt;8080&lt;/code&gt;, but you can verify that everything works by accessing the
+&lt;code&gt;dashboard&lt;/code&gt; on &lt;code&gt;http://&amp;lt;MASTER-PUBLIC-IP&amp;gt;:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard&lt;/code&gt;, if you remove the rule.&lt;/p&gt;
+
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
+
+&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Jenkins on Kubernetes ARM</title>
@@ -27,19 +164,19 @@
 
 &lt;p&gt;The plugin kicks off every build in a new &lt;code&gt;pod&lt;/code&gt; and tears it down when the build is complete. This means that every build is clean and reproducible. This is clearly something that we want in &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;before-we-begin:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Before we begin&lt;/h5&gt;
+&lt;h5 id=&#34;before-we-begin&#34;&gt;Before we begin&lt;/h5&gt;
 
 &lt;p&gt;There is now support for multiple platforms with the relase of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt;, &lt;code&gt;arm&lt;/code&gt; and &lt;code&gt;arm64&lt;/code&gt; being two of them. There is also a side project: &lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;&lt;code&gt;kube-deploy/docker-multinode&lt;/code&gt;&lt;/a&gt; that lets you setup a Kubernetes cluster in minutes, using docker.&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt; - is my project that uses &lt;code&gt;kube-deploy/docker-multinode&lt;/code&gt; for running Kubernetes &lt;em&gt;&amp;ldquo;native&amp;rdquo;&lt;/em&gt;. You can read more about it in an earlier post &lt;a href=&#34;http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/&#34;&gt;Building your Kubernetes cluster in minutes&lt;/a&gt;. You&amp;rsquo;re more than welcome to check(it)out and give it a try.&lt;/p&gt;
 
-&lt;h6 id=&#34;prerequisites:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Prerequisites&lt;/h6&gt;
+&lt;h6 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h6&gt;
 
 &lt;ul&gt;
 &lt;li&gt;A Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; cluster with &lt;code&gt;arm&lt;/code&gt; or &lt;code&gt;arm64&lt;/code&gt; nodes.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&#34;setting-up-jenkins:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Setting up Jenkins&lt;/h5&gt;
+&lt;h5 id=&#34;setting-up-jenkins&#34;&gt;Setting up Jenkins&lt;/h5&gt;
 
 &lt;p&gt;The Jenkins master keeps state and needs a durable volume for storing
 data about your builds. I highly recommend using something other than &lt;code&gt;emptyDir&lt;/code&gt; or &lt;code&gt;hostPath&lt;/code&gt;. I use a &lt;code&gt;nfs&lt;/code&gt; volume.&lt;/p&gt;
@@ -111,7 +248,7 @@ spec:
 
 &lt;p&gt;You should now have Jenkins up and running. Now check your Jenkins &lt;code&gt;pod&lt;/code&gt; log and copy the &lt;em&gt;first time password&lt;/em&gt; and head over to Jenkins to set it up, and while your there, install the Kubernetes plugin. Come back here when your done and I&amp;rsquo;ll show you how to setup the plugin.&lt;/p&gt;
 
-&lt;h5 id=&#34;setting-up-jenkins-kubernetes-plugin:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Setting up Jenkins Kubernetes plugin&lt;/h5&gt;
+&lt;h5 id=&#34;setting-up-jenkins-kubernetes-plugin&#34;&gt;Setting up Jenkins Kubernetes plugin&lt;/h5&gt;
 
 &lt;p&gt;The Kubernetes plugin uses a &lt;code&gt;slave&lt;/code&gt; image and a &lt;code&gt;pod&lt;/code&gt;-template so there´s
 not much for you to configure. Follow the instruction on the plugin &lt;a href=&#34;https://wiki.jenkins-ci.org/display/JENKINS/Kubernetes+Plugin&#34;&gt;page&lt;/a&gt; but use &lt;a href=&#34;https://hub.docker.com/r/kodbasen/jenkins-slave-arm/&#34;&gt;kodbasen/jenkins-slave-arm&lt;/a&gt; image as &lt;em&gt;Docker image&lt;/em&gt;.
@@ -154,7 +291,7 @@ not much for you to configure. Follow the instruction on the plugin &lt;a href=&
 
 &lt;/p&gt;
 
-&lt;h5 id=&#34;running-docker-builds:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Running Docker builds&lt;/h5&gt;
+&lt;h5 id=&#34;running-docker-builds&#34;&gt;Running Docker builds&lt;/h5&gt;
 
 &lt;p&gt;If you wan&amp;rsquo;t to run docker builds on Jenkins theres another slave image that you can use: &lt;a href=&#34;https://hub.docker.com/r/kodbasen/jenkins-docker-slave-arm/&#34;&gt;kodbasen/jenkins-docker-slave-arm&lt;/a&gt;. This image includes the docker binaries and runs docker builds on the host where the pod is running. For this to
 work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
@@ -177,7 +314,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;/p&gt;
 
-&lt;h5 id=&#34;running-your-builds:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Running your builds&lt;/h5&gt;
+&lt;h5 id=&#34;running-your-builds&#34;&gt;Running your builds&lt;/h5&gt;
 
 &lt;p&gt;When running your build you&amp;rsquo;ll se the build pending while the slave is provisioned.
 
@@ -201,7 +338,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;p&gt;You can control which nodes should be used for running builds using a &lt;code&gt;nodeSelector&lt;/code&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;conclusion:25f44cd508d63589bb581c03a4d68b48&#34;&gt;Conclusion&lt;/h5&gt;
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
 &lt;p&gt;I&amp;rsquo;ve started moving all my builds from Drone over to Jenkins. If you decide to give Jenkins a try, and you&amp;rsquo;re using &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt;, let me know how it goes.&lt;/p&gt;
 
@@ -253,7 +390,7 @@ track of your annotations, and I personally think that they shouldn&amp;rsquo;t 
 in the first place. With the Ingress Resource you get a clear separation between
 your service, and how you expose the service outside your cluster.&lt;/p&gt;
 
-&lt;h4 id=&#34;ingress-controller:ebff967dba27d185454e1bb8a30150d3&#34;&gt;Ingress controller&lt;/h4&gt;
+&lt;h4 id=&#34;ingress-controller&#34;&gt;Ingress controller&lt;/h4&gt;
 
 &lt;p&gt;Creating an Ingress without an Ingress controller will have no effect. So we
 first need to install a controller. You can read more about Ingress controllers
@@ -361,7 +498,7 @@ of the alternatives on our list, &lt;code&gt;nfs&lt;/code&gt; and &lt;code&gt;is
 mounted them in two different Elasticsearch data node pods, and suddenly, all the
 problems with Elasticsearch and Kibana is gone.&lt;/p&gt;
 
-&lt;h5 id=&#34;using-iscsi:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;Using iSCSI&lt;/h5&gt;
+&lt;h5 id=&#34;using-iscsi&#34;&gt;Using iSCSI&lt;/h5&gt;
 
 &lt;p&gt;Installing &lt;code&gt;iSCSI&lt;/code&gt; Initiator in Arch Linux is rather straight forward:&lt;/p&gt;
 
@@ -397,7 +534,7 @@ spec:
 &lt;p&gt;I leave it up to you to create a &lt;code&gt;PersistentVolumeClaim&lt;/code&gt; and mount it in to your
 pod.&lt;/p&gt;
 
-&lt;h4 id=&#34;to-sum-up:28bd4339389ee1959293ee1ce0b1ef71&#34;&gt;To sum up&lt;/h4&gt;
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
 
 &lt;p&gt;If you want to use your Kubernetes-On-ARM cluster for more advanced applications
 then you need to think about how to solve persistence.&lt;/p&gt;
@@ -452,7 +589,7 @@ and add metadata from &lt;code&gt;Kubernetes&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;If you haven&amp;rsquo;t upgraded to &lt;code&gt;Kubernetes-On-ARM v0.7.0&lt;/code&gt; and &lt;code&gt;Kubernetes 1.2&lt;/code&gt;, do
 that first.&lt;/p&gt;
 
-&lt;h4 id=&#34;upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2&lt;/h4&gt;
+&lt;h4 id=&#34;upgrading-to-kibana-4-5-0-and-elasticsearch-2-3-2&#34;&gt;Upgrading to Kibana 4.5.0 and Elasticsearch 2.3.2&lt;/h4&gt;
 
 &lt;p&gt;I have created images for &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;kibana&lt;/code&gt; that can be found here:&lt;/p&gt;
 
@@ -472,7 +609,7 @@ $ kubectl delete -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/mast
 $ kubectl create -f https://raw.githubusercontent.com/kodbasen/kibana-armhf/master/kibana.yaml
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h4 id=&#34;collecting-journald-logs:067b7f7d4fc16bce7784c9369d044678&#34;&gt;Collecting journald logs&lt;/h4&gt;
+&lt;h4 id=&#34;collecting-journald-logs&#34;&gt;Collecting journald logs&lt;/h4&gt;
 
 &lt;p&gt;I found this solution from &lt;a href=&#34;https://github.com/ianblenke/docker-fluentd/tree/master/systemd&#34;&gt;ianblenke&lt;/a&gt;
 and I have created a repo here: &lt;a href=&#34;https://github.com/kodbasen/fluentd-kubernetes&#34;&gt;fluentd-kubernetes&lt;/a&gt;.&lt;/p&gt;
@@ -568,7 +705,7 @@ in &lt;code&gt;elasticsearch&lt;/code&gt;.&lt;/p&gt;
 
 &lt;/p&gt;
 
-&lt;h4 id=&#34;to-sum-up:067b7f7d4fc16bce7784c9369d044678&#34;&gt;To sum up&lt;/h4&gt;
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
 
 &lt;p&gt;Now we can collect logs from both &lt;code&gt;PODS&lt;/code&gt; and &lt;code&gt;nodes&lt;/code&gt;. But you will soon discover
 that our nodes generates a huge amount of logs. Basically were running the same
@@ -645,7 +782,7 @@ We&amp;rsquo;ll see how much of this we can achieve.&lt;/p&gt;
 &lt;p&gt;But we need to start somewhere, so let&amp;rsquo;s get started with &lt;code&gt;logstash-forwarder&lt;/code&gt;
 and collect &lt;code&gt;syslog&lt;/code&gt;.&lt;/p&gt;
 
-&lt;h4 id=&#34;elasticsearch:5ef3c2c0e23696371af99bf964485763&#34;&gt;Elasticsearch&lt;/h4&gt;
+&lt;h4 id=&#34;elasticsearch&#34;&gt;Elasticsearch&lt;/h4&gt;
 
 &lt;p&gt;First we need to get &lt;code&gt;elasticsearch&lt;/code&gt; up and running. I have prepared all
 necessary docker images so all you need to do is to deploy them to your cluster.&lt;/p&gt;
@@ -665,7 +802,7 @@ status using this command:&lt;/p&gt;
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;docker run --rm --dns=10.0.0.10 hypriot/armhf-busybox wget -q -O -  http://elasticsearch:9200/_cluster/health?pretty
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h4 id=&#34;logstash-kibana:5ef3c2c0e23696371af99bf964485763&#34;&gt;Logstash + Kibana&lt;/h4&gt;
+&lt;h4 id=&#34;logstash-kibana&#34;&gt;Logstash + Kibana&lt;/h4&gt;
 
 &lt;p&gt;Paulo’s solution uses the Lumberjack secure protocol, and you need generate your
 own certificate and key for &lt;code&gt;logstash.default.svc.cluster.local&lt;/code&gt;. I am using
@@ -772,7 +909,7 @@ waiting for logs to be stored in elastic. &lt;em&gt;Kibana&lt;/em&gt; is hanging
 logs to appear in the &lt;code&gt;.kibana&lt;/code&gt; index. But we need to start thinking of how
 to forward logs from our nodes to &lt;em&gt;logstash&lt;/em&gt;.&lt;/p&gt;
 
-&lt;h4 id=&#34;logstash-forwarder:5ef3c2c0e23696371af99bf964485763&#34;&gt;Logstash Forwarder&lt;/h4&gt;
+&lt;h4 id=&#34;logstash-forwarder&#34;&gt;Logstash Forwarder&lt;/h4&gt;
 
 &lt;p&gt;In this first part we will use &lt;code&gt;logstash-forwarder&lt;/code&gt; to collect logs from our
 nodes and forward them to logstash. In the following parts of this series we
@@ -891,7 +1028,7 @@ look at the container log, you should see something similar:&lt;/p&gt;
 2016/03/11 15:14:02.889663 Registrar: processing 256 events
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h4 id=&#34;to-sum-up:5ef3c2c0e23696371af99bf964485763&#34;&gt;To sum up&lt;/h4&gt;
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
 
 &lt;p&gt;We have created a &lt;code&gt;elasticsearch&lt;/code&gt; cluster for storing logs, and &lt;code&gt;logstash&lt;/code&gt;for
 processing incoming logs. We&amp;rsquo;ve also setup &lt;code&gt;kibana&lt;/code&gt; for searching and
@@ -902,13 +1039,13 @@ visualizing. On our nodes we have installed &lt;code&gt;logstash-forwarder&lt;/c
 and stderr from our containers to &lt;code&gt;logstash&lt;/code&gt;. As always, I hope you picked up
 something new and found it worth while reading.&lt;/p&gt;
 
-&lt;h5 id=&#34;docker-images:5ef3c2c0e23696371af99bf964485763&#34;&gt;Docker images&lt;/h5&gt;
+&lt;h5 id=&#34;docker-images&#34;&gt;Docker images&lt;/h5&gt;
 
 &lt;p&gt;All images are built from Pauls with generated &lt;code&gt;Dockerfile&lt;/code&gt;:s for &lt;code&gt;armhf&lt;/code&gt;.
 The &lt;em&gt;Java&lt;/em&gt; base image for &lt;code&gt;elasticsearch&lt;/code&gt; is
 &lt;a href=&#34;https://hub.docker.com/r/larmog/armhf-alpine-java/&#34;&gt;larmog/armhf-alpine-java&lt;/a&gt;&lt;/p&gt;
 
-&lt;h5 id=&#34;acknowledgement:5ef3c2c0e23696371af99bf964485763&#34;&gt;Acknowledgement&lt;/h5&gt;
+&lt;h5 id=&#34;acknowledgement&#34;&gt;Acknowledgement&lt;/h5&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/pires&#34;&gt;Paulo Pires&lt;/a&gt; repositories for
@@ -917,7 +1054,7 @@ The &lt;em&gt;Java&lt;/em&gt; base image for &lt;code&gt;elasticsearch&lt;/code&
 Java image on &lt;code&gt;armhf&lt;/code&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&#34;links:5ef3c2c0e23696371af99bf964485763&#34;&gt;Links&lt;/h5&gt;
+&lt;h5 id=&#34;links&#34;&gt;Links&lt;/h5&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/pires/kubernetes-elasticsearch-cluster&#34;&gt;https://github.com/pires/kubernetes-elasticsearch-cluster&lt;/a&gt;&lt;/li&gt;
@@ -959,7 +1096,7 @@ on &lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;HypriotOS&lt;/a&gt;.&lt;/p&g
 
 &lt;p&gt;In this post I will try to summarize my experiences so far.&lt;/p&gt;
 
-&lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
+&lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
 
 &lt;p&gt;One of the reasons that I wanted to run Drone was it’s use of Docker, and to
 build and push docker images to a registry. Drone has a plugin that does all
@@ -1018,7 +1155,7 @@ this will hopefully be resolved in Kubernetes 1.2. Meantime, the solution is,
 to remove one of the nodes from the Kubernetes cluster and use it as a remote
 worker-node in Drone.&lt;/p&gt;
 
-&lt;h5 id=&#34;containerized-kubelet:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Containerized Kubelet&lt;/h5&gt;
+&lt;h5 id=&#34;containerized-kubelet&#34;&gt;Containerized Kubelet&lt;/h5&gt;
 
 &lt;p&gt;There are issues, when running the &lt;code&gt;kubelet&lt;/code&gt; in a container, and is work in
 progress, to resolve those issues.&lt;/p&gt;
@@ -1028,7 +1165,7 @@ progress, to resolve those issues.&lt;/p&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/kubernetes/kubernetes/issues/14403&#34;&gt;https://github.com/kubernetes/kubernetes/issues/14403&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&#34;glusterfs-usb-and-100mbit-ethernet-network:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Glusterfs USB and 100Mbit/Ethernet network&lt;/h5&gt;
+&lt;h5 id=&#34;glusterfs-usb-and-100mbit-ethernet-network&#34;&gt;Glusterfs USB and 100Mbit/Ethernet network&lt;/h5&gt;
 
 &lt;p&gt;I’ve been wanting to try out &lt;a href=&#34;http://go.cd&#34;&gt;Go CD&lt;/a&gt; for some time now, and try to set up a pipeline on Kubernetes. If you take a look at the &lt;a href=&#34;https://docs.go.cd/current/installation/system_requirements.html&#34;&gt;system requirements&lt;/a&gt; for Go CD, you will see that this is not suitable for a Raspberry Pi. The Go Server is a giant monolith, but what the heck, sometimes you need to check out the limit. I created a Docker image for ARM and tried to start up a pod.&lt;/p&gt;
 
@@ -1038,7 +1175,7 @@ start and I measured the read/write speed on the glusterfs to around 1,5-2 MB/s.
 One should not expect any great performance when running &lt;code&gt;glusterfs&lt;/code&gt; on
 &lt;em&gt;Raspberry Pi&lt;/em&gt;. There are some real bottlenecks on network and USB.&lt;/p&gt;
 
-&lt;h5 id=&#34;upgrading-to-docker-v1-10-2:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Upgrading to Docker v1.10.2&lt;/h5&gt;
+&lt;h5 id=&#34;upgrading-to-docker-v1-10-2&#34;&gt;Upgrading to Docker v1.10.2&lt;/h5&gt;
 
 &lt;p&gt;The &lt;em&gt;Hypriot&lt;/em&gt; team has written a post about &lt;a href=&#34;http://blog.hypriot.com/post/test-build-and-package-docker-for-arm-the-official-way/&#34;&gt;Test, build and package Docker for ARM the official way&lt;/a&gt;.
 That was one of reasons why I wanted to upgrade Docker to &lt;code&gt;v1.10.2&lt;/code&gt;.
@@ -1054,7 +1191,7 @@ anymore and is reported here:&lt;/p&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/fsouza/go-dockerclient/issues/455&#34;&gt;https://github.com/fsouza/go-dockerclient/issues/455&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&#34;summarize:38dbe607a3f0a33b702c4d61c17d021b&#34;&gt;Summarize&lt;/h5&gt;
+&lt;h5 id=&#34;summarize&#34;&gt;Summarize&lt;/h5&gt;
 
 &lt;p&gt;Running &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; together with new releases of &lt;em&gt;Docker&lt;/em&gt; is nothing
 for the faint hearted. There are some issues that hopefully will be resolved in
@@ -1312,7 +1449,7 @@ containers. This makes it a bit problematic running Drone on ARM because we
 need to rebuild everything, from Drone it self to all plugins that we wan&amp;rsquo;t to
 use. We need to setup a Drone infrastructure for ARM, &lt;strong&gt;or so I thought&amp;hellip;&lt;/strong&gt;&lt;/p&gt;
 
-&lt;h5 id=&#34;on-the-shoulder-of-others:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;On the shoulder of others&lt;/h5&gt;
+&lt;h5 id=&#34;on-the-shoulder-of-others&#34;&gt;On the shoulder of others&lt;/h5&gt;
 
 &lt;p&gt;Fortunately before I jumped in to the &lt;em&gt;rabbit hole&lt;/em&gt;, not knowing if it was a
 dead end, I found two different initiatives for running Drone on ARM. You can
@@ -1323,7 +1460,7 @@ read more about it here:
 &lt;a href=&#34;https://github.com/armhf-docker-library/drone&#34;&gt;armhf-docker-library/drone&lt;/a&gt; and
 I also found this example from Greg Taylor: &lt;a href=&#34;https://github.com/drone-demos/drone-on-kubernetes/&#34;&gt;drone-on-kubernetes&lt;/a&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;lets-get-started:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Lets get started&lt;/h5&gt;
+&lt;h5 id=&#34;lets-get-started&#34;&gt;Lets get started&lt;/h5&gt;
 
 &lt;p&gt;First we need to create persistent volume for our sqlite database:&lt;/p&gt;
 
@@ -1462,7 +1599,7 @@ kubernetes   10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&am
 &lt;code&gt;ha-proxy&lt;/code&gt; status page, and you should be able to login with your &lt;em&gt;Gogs&lt;/em&gt;
 account.&lt;/p&gt;
 
-&lt;h5 id=&#34;ca-and-pki-infrastructure:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;CA and PKI infrastructure&lt;/h5&gt;
+&lt;h5 id=&#34;ca-and-pki-infrastructure&#34;&gt;CA and PKI infrastructure&lt;/h5&gt;
 
 &lt;p&gt;If your using your own CA and PKI infrastructure and a service-loadbalancer,
 then there is a couple of things you need to do. When you have activated a
@@ -1538,14 +1675,14 @@ a bit of a hack.
 
 
 
-&lt;h5 id=&#34;conclusion:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Conclusion&lt;/h5&gt;
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
 &lt;p&gt;This concludes our series about running Gogs and Drone on Kubernetes-ARM.
 Thanks to the excellent job done by others, it is a rather straight forward
 process to set it up. I hope you liked the series and hope you&amp;rsquo;ve picked up
 something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some more about &lt;em&gt;Drone&lt;/em&gt;.&lt;/p&gt;
 
-&lt;h5 id=&#34;finally:45fd2cf7d6daaa0f28a943db69cd162c&#34;&gt;Finally&lt;/h5&gt;
+&lt;h5 id=&#34;finally&#34;&gt;Finally&lt;/h5&gt;
 
 &lt;p&gt;Some useful links:&lt;/p&gt;
 
@@ -1948,7 +2085,7 @@ On the other hand I don&amp;rsquo;t want to spend a fortune building a DC just f
 
 
 
-&lt;p&gt;
+
 &lt;figure&gt;
   &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
     &lt;div class=&#34;card-content black-text&#34;&gt;
@@ -1970,7 +2107,7 @@ On the other hand I don&amp;rsquo;t want to spend a fortune building a DC just f
   &lt;/div&gt;
 &lt;/figure&gt;
 
-&lt;/p&gt;
+
 </description>
     </item>
     
@@ -2045,111 +2182,6 @@ $open http://tour.golang.org/welcome/1
 &lt;p&gt;I&amp;rsquo;m keeping Java in my toolbox but I&amp;rsquo;ve started using
 &lt;a href=&#34;https://golang.org/&#34;&gt;The Go Programming Language&lt;/a&gt; as my new tool and
 it&amp;rsquo;s great fun.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Simple Groovy AOP using MOP</title>
-      <link>http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/</link>
-      <pubDate>Mon, 18 Aug 2014 21:37:45 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2014/08/18/simple-groovy-aop-using-mop/</guid>
-      <description>&lt;p&gt;I was looking for a simple solution for adding cross cutting concerns to Groovy
-classes. The most obvious solution was to implement &lt;code&gt;GroovyInterceptable&lt;/code&gt; but I wanted a
-less intrusive solution. After a bit of googling I&amp;rsquo;ve stumbled across
-&lt;code&gt;DelegatingMetaClass&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;Here is a simple interceptor that works like a around advice. It only logs all method
-calls for a class.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;
-class Interceptor extends DelegatingMetaClass {
-  	Interceptor(final Class cls) {
-      	super(cls)
-      	initialize()
-  	}
-
-  	public Object invokeMethod(Object obj, String method, Object[] args) {
-      	String cls = obj.class.simpleName
-      	println &amp;quot;before: $cls.$method, args:$args --&amp;gt;&amp;quot;
-      	def val = null
-      	try {
-          	val = super.invokeMethod(obj, method, args)
-      	} catch(Exception e) {
-          	println &amp;quot;after: $cls.$method, has thrown:$e &amp;lt;--&amp;quot;
-          	throw e
-      	}
-      	println &amp;quot;after: $cls.$method, return value:$val &amp;lt;--&amp;quot;
-      	return val;
-  	}
-
-  	def static injectIn(Class cls) {
-      	cls.metaClass = new Interceptor(cls)
-  	}
-}
-
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can now use the &lt;code&gt;Interceptor&lt;/code&gt; to trace calls to &lt;code&gt;ArrayList&lt;/code&gt; like this:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	Interceptor.InjectIn(ArrayList)
-
-	def list = []
-	list &amp;lt;&amp;lt; &amp;quot;Joe&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If we run the above it will produce:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;	before: ArrayList.leftShift, args:[Joe] --&amp;gt;
-	after: ArrayList.leftShift, return value:[Joe] &amp;lt;--
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;It works width mixin&amp;rsquo;s too, for example:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	class Person {
-		def name
-
-		def sayHello() { println &amp;quot;Hi, my name is $name!&amp;quot;}
-	}
-
-	class Dancer {
-		def dance() { println &amp;quot;I can dance&amp;quot; }
-	}
-
-	class Singer {
-		def sing() { println &amp;quot;I can sing&amp;quot; }
-	}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;We can now create a person who dance and sing. The &lt;code&gt;Interceptor&lt;/code&gt; must be injected
-after the mixin:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;	Person.mixin Singer
-	Person.mixin Dancer
-	Interceptor.injectIn(Person)
-
-	def p = new Person(name: &amp;quot;Jill&amp;quot;)
-	p.sayHello()
-	p.sing()
-	p.dance()
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This will produce the following output:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;	before: Person.sayHello, args:[] --&amp;gt;
-	before: Person.println, args:[Hi, my name is Jill!] --&amp;gt;
-	Hi, my name is Jill!
-	after: Person.println, return value:null &amp;lt;--
-	after: Person.sayHello, return value:null &amp;lt;--
-	before: Person.sing, args:[] --&amp;gt;
-	I can sing
-	after: Person.sing, return value:null &amp;lt;--
-	before: Person.dance, args:[] --&amp;gt;
-	I can dance
-	after: Person.dance, return value:null &amp;lt;--
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;As we can see in the example above the &lt;code&gt;println&lt;/code&gt;-method is part of the Groovy object.&lt;/p&gt;
 </description>
     </item>
     

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Setting up Kubernetes on Scaleway - Part 1</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Setting up Kubernetes on Scaleway - Part 1</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker-cloud/">Docker, Cloud</a>
+            
+          
+          </p>
+          <p>
+
+<p><a href="http://scaleway.com">
+<img src="https://www.scaleway.com/img/scaleway.f0e4.svg" style="float:right;height:80px"></a></p>
+
+<p>This post is the first in a series on setting up Kubernetes using the bare-metal cloud provider Scaleway. Scaleway offers bare-metal servers both for ARM and x86-64. I will show how to
+set up Kubernetes on ARM using the Scaleway C1 server.</p>
+
+<h5 id="disclaimer">Disclaimer</h5>
+
+<p>This work is done to the best of my ability, but you should know that i&rsquo;m new to Scaleway and i&rsquo;m writing this in my spare time, and sometimes in a haste. See it as an inspiration. Your feedback is always welcome.</p>
+
+<h5 id="creating-servers">Creating servers</h5>
+
+<p>First you need to sign up for a Scaleway account. Then head over to the <strong>Servers</strong> page and create two C1 servers. Select the Docker image from <em>ImageHub</em> and make sure you assign a public IP for both servers.</p>
+
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Creating a C1 Docker ready server for Kubernetes.</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/scw-c1-server.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+
+
+<h5 id="fixing-missing-link">Fixing missing link</h5>
+
+<p>I had some problems with the dynamic link interpreter for the <code>hyperkube</code> binary, but creating this link on both servers fixes the problem.</p>
+
+<pre><code class="language-shell">root@scw-xxxxx:~# cd /lib
+root@scw-xxxxx:/lib# ln -s arm-linux-gnueabihf/ld-2.23.so ld-linux.so.3
+</code></pre>
+
+<h5 id="cloning-sloop">Cloning Sloop</h5>
+
+<p>You know what Sloop is right? If not take a quick look at this earlier post: <a href="/2016/07/14/building-your-kubernetes-cluster-in-minutes/">Building your Kubernetes cluster in minutes</a>.</p>
+
+<p>Clone the <a href="https://github.com/kodbasen/sloop">Sloop</a> project on both servers and
+create a <code>sloop.conf</code> file in the Sloop directory that looks like this:</p>
+
+<pre><code class="language-bash">K8S_VERSION=v1.3.5
+FLANNEL_NETWORK=10.10.0.0/16
+FLANNEL_BACKEND=host-gw
+
+# This entry is only required on your workers
+MASTER_IP=&lt;your master server Public-IP&gt;
+</code></pre>
+
+<p><code>MASTER_IP</code> should only be set on your worker(s).</p>
+
+<h5 id="securing-your-environment">Securing your environment</h5>
+
+<p>Scaleway offers <em>Security</em> for your network through static IP package inspection. Your rules are configured in a <em>security group</em>. The problem is that you can&rsquo;t have a default rule that matches and blocks all inbound traffic last in the list, and only add specific ports.</p>
+
+<p>You need to add rules for all ports you want to drop traffic on and add your server to the top of the list with a rule that accepts all traffic.
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Security Group rules</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/scw-security-group-rules.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+</p>
+
+<h5 id="starting-your-master">Starting your master</h5>
+
+<p>Now it&rsquo;s time to start up your master:</p>
+
+<pre><code class="language-shell">root@scw-master:~/sloop# ./sloop-master.sh
+</code></pre>
+
+<p>You can verify that your master is running using <code>kubectl</code>:</p>
+
+<pre><code class="language-shell">root@scw-master:~# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1m
+root@scw-master:~#
+root@scw-master:~#
+root@scw-master:~# kubectl cluster-info
+Kubernetes master is running at http://localhost:8080
+KubeDNS is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kube-dns
+kubernetes-dashboard is running at http://localhost:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard
+</code></pre>
+
+<h5 id="starting-your-worker-s">Starting your worker(s)</h5>
+
+<p>Now it&rsquo;s time to bring up your worker:</p>
+
+<pre><code class="language-shell">root@scw-worker:~/sloop# ./sloop-worker.sh
+</code></pre>
+
+<p>If you switch back to your <code>scw-master</code> server and run <code>kubectl get nodes</code> you
+should see two nodes:</p>
+
+<pre><code class="language-shell">root@scw-master:~/sloop# kubectl get nodes
+NAME          STATUS    AGE
+10.1.xxx.xxx   Ready     1d
+10.1.xxx.xxx   Ready     1d
+</code></pre>
+
+<h5 id="verify-that-everything-works">Verify that everything works</h5>
+
+<p>Your <code>api-server</code> is unprotectd and we added a rule to our <em>Security Group</em> to block all trafic on port <code>8080</code>, but you can verify that everything works by accessing the
+<code>dashboard</code> on <code>http://&lt;MASTER-PUBLIC-IP&gt;:8080/api/v1/proxy/namespaces/kube-system/services/kubernetes-dashboard</code>, if you remove the rule.</p>
+
+<h5 id="conclusion">Conclusion</h5>
+
+<p>We now have 2 nodes running Kubernetes on <strong>ARM</strong>. In the next post in this series i hope to show how to setup an <code>ingress-controller</code> with certificates and how to secure your api-server.</p>
+</p>
+          <p>17 Aug 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/sloop/">#Sloop</a>
+              
+                <a href="http://larmog.github.io//tags/arm/">#ARM</a>
+              
+                <a href="http://larmog.github.io//tags/amd64/">#AMD64</a>
+              
+                <a href="http://larmog.github.io//tags/scaleway/">#Scaleway</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f&text=Setting%20up%20Kubernetes%20on%20Scaleway%20-%20Part%201&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f&title=Setting%20up%20Kubernetes%20on%20Scaleway%20-%20Part%201" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f&title=Setting%20up%20Kubernetes%20on%20Scaleway%20-%20Part%201" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f&mini=true&title=Setting%20up%20Kubernetes%20on%20Scaleway%20-%20Part%201&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Setting%20up%20Kubernetes%20on%20Scaleway%20-%20Part%201&body=http%3a%2f%2flarmog.github.io%2f2016%2f08%2f17%2fsetting-up-kubernetes-on-scaleway---part-1%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/07/26/jenkins-on-kubernetes-arm/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

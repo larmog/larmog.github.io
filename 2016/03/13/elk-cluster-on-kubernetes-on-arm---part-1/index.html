@@ -128,7 +128,7 @@ We&rsquo;ll see how much of this we can achieve.</p>
 <p>But we need to start somewhere, so let&rsquo;s get started with <code>logstash-forwarder</code>
 and collect <code>syslog</code>.</p>
 
-<h4 id="elasticsearch:5ef3c2c0e23696371af99bf964485763">Elasticsearch</h4>
+<h4 id="elasticsearch">Elasticsearch</h4>
 
 <p>First we need to get <code>elasticsearch</code> up and running. I have prepared all
 necessary docker images so all you need to do is to deploy them to your cluster.</p>
@@ -148,7 +148,7 @@ status using this command:</p>
 <pre><code class="language-shell">docker run --rm --dns=10.0.0.10 hypriot/armhf-busybox wget -q -O -  http://elasticsearch:9200/_cluster/health?pretty
 </code></pre>
 
-<h4 id="logstash-kibana:5ef3c2c0e23696371af99bf964485763">Logstash + Kibana</h4>
+<h4 id="logstash-kibana">Logstash + Kibana</h4>
 
 <p>Paulo’s solution uses the Lumberjack secure protocol, and you need generate your
 own certificate and key for <code>logstash.default.svc.cluster.local</code>. I am using
@@ -255,7 +255,7 @@ waiting for logs to be stored in elastic. <em>Kibana</em> is hanging around wait
 logs to appear in the <code>.kibana</code> index. But we need to start thinking of how
 to forward logs from our nodes to <em>logstash</em>.</p>
 
-<h4 id="logstash-forwarder:5ef3c2c0e23696371af99bf964485763">Logstash Forwarder</h4>
+<h4 id="logstash-forwarder">Logstash Forwarder</h4>
 
 <p>In this first part we will use <code>logstash-forwarder</code> to collect logs from our
 nodes and forward them to logstash. In the following parts of this series we
@@ -374,7 +374,7 @@ look at the container log, you should see something similar:</p>
 2016/03/11 15:14:02.889663 Registrar: processing 256 events
 </code></pre>
 
-<h4 id="to-sum-up:5ef3c2c0e23696371af99bf964485763">To sum up</h4>
+<h4 id="to-sum-up">To sum up</h4>
 
 <p>We have created a <code>elasticsearch</code> cluster for storing logs, and <code>logstash</code>for
 processing incoming logs. We&rsquo;ve also setup <code>kibana</code> for searching and
@@ -385,13 +385,13 @@ visualizing. On our nodes we have installed <code>logstash-forwarder</code>, to 
 and stderr from our containers to <code>logstash</code>. As always, I hope you picked up
 something new and found it worth while reading.</p>
 
-<h5 id="docker-images:5ef3c2c0e23696371af99bf964485763">Docker images</h5>
+<h5 id="docker-images">Docker images</h5>
 
 <p>All images are built from Pauls with generated <code>Dockerfile</code>:s for <code>armhf</code>.
 The <em>Java</em> base image for <code>elasticsearch</code> is
 <a href="https://hub.docker.com/r/larmog/armhf-alpine-java/">larmog/armhf-alpine-java</a></p>
 
-<h5 id="acknowledgement:5ef3c2c0e23696371af99bf964485763">Acknowledgement</h5>
+<h5 id="acknowledgement">Acknowledgement</h5>
 
 <ul>
 <li><a href="https://github.com/pires">Paulo Pires</a> repositories for
@@ -400,7 +400,7 @@ The <em>Java</em> base image for <code>elasticsearch</code> is
 Java image on <code>armhf</code>.</li>
 </ul>
 
-<h5 id="links:5ef3c2c0e23696371af99bf964485763">Links</h5>
+<h5 id="links">Links</h5>
 
 <ul>
 <li><a href="https://github.com/pires/kubernetes-elasticsearch-cluster">https://github.com/pires/kubernetes-elasticsearch-cluster</a></li>
