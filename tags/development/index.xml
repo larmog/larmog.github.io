@@ -7,8 +7,326 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Wed, 17 Aug 2016 20:48:11 +0200</lastBuildDate>
+    <lastBuildDate>Sun, 09 Oct 2016 22:00:00 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/development/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Kubernetes on Scaleway - Part 1 (Revisited) &amp; 2</title>
+      <link>http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/</link>
+      <pubDate>Sun, 09 Oct 2016 22:00:00 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/</guid>
+      <description>
+
+&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+&lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Things doesn&amp;rsquo;t always turn out as planned. This is specially true when it comes
+to this series, on how to setup &lt;em&gt;Kubernetes&lt;/em&gt; on &lt;em&gt;Scaleway&lt;/em&gt;. The plan was that
+part 2 would be about setting up an &lt;code&gt;ingress-controller&lt;/code&gt; and securing the
+&lt;code&gt;api-server&lt;/code&gt; and &lt;code&gt;dashboard&lt;/code&gt;. But in the meantime, while I was struggling with
+getting &lt;code&gt;weave&lt;/code&gt; working on &lt;code&gt;ARM&lt;/code&gt; and re-writing my own little project &lt;code&gt;sloop&lt;/code&gt;,
+Kubernetes &lt;code&gt;v1.4.0&lt;/code&gt; was released with the &lt;code&gt;kubeadm&lt;/code&gt; tool.&lt;/p&gt;
+
+&lt;p&gt;With the tool &lt;code&gt;kubeadm&lt;/code&gt;, you can easily install a secure Kubernetes cluster. It
+makes projects like my own &lt;code&gt;Sloop&lt;/code&gt; unnecessary, and that&amp;rsquo;s a good thing.&lt;/p&gt;
+
+&lt;p&gt;In this post I will show how to setup Kubernetes using &lt;code&gt;kubeadm&lt;/code&gt; and setting up
+an &lt;code&gt;ingress-controller&lt;/code&gt; and how to secure your &lt;code&gt;api-server&lt;/code&gt; and &lt;code&gt;dashboard&lt;/code&gt;. We
+won&amp;rsquo;t be using &lt;code&gt;ARM&lt;/code&gt; for this, that&amp;rsquo;s a topic for another blog post.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the recipe:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1 Scaleway account
+2 VC1S servers
+1 wildcard certificate
+2 kubeadm
+1 DaemonSet weave-kube CNI plugin
+1 traefik reverse proxy (http://traefik.io)
+1 traefik ingress-controller
+1 domain name
+1 DNS A record
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can replace the domain and &lt;code&gt;DNS A&lt;/code&gt; record with entries in your &lt;code&gt;hosts&lt;/code&gt; file
+if you just want to try this out.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s get started!&lt;/p&gt;
+
+&lt;h4 id=&#34;create-master-node&#34;&gt;Create master node&lt;/h4&gt;
+
+&lt;p&gt;Creating your Kubernetes cluster using &lt;code&gt;kubeadm&lt;/code&gt; is described excellent in this
+&lt;a href=&#34;http://kubernetes.io/docs/getting-started-guides/kubeadm/&#34;&gt;guide&lt;/a&gt;. I only
+include the steps here for completeness.&lt;/p&gt;
+
+&lt;p&gt;First thing is to create the &lt;code&gt;k8s-master&lt;/code&gt; node:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# Create your master node:
+$ scw start -w $(scw create --name=&amp;quot;k8s-master&amp;quot; --commercial-type=&amp;quot;VC1S&amp;quot;  Docker)
+$ scw ps
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Login to your &lt;code&gt;k8s-master&lt;/code&gt; node and install the Kubernetes components:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+$ cat &amp;lt;&amp;lt;EOF &amp;gt; /etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+$ apt-get update
+$ apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+$ kubeadm init
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;create-your-worker-node&#34;&gt;Create your worker node&lt;/h4&gt;
+
+&lt;p&gt;Repeat the steps from installing the &lt;code&gt;k8s-master&lt;/code&gt; but name the node: &lt;code&gt;k8s-node1&lt;/code&gt;
+and use the &lt;code&gt;join&lt;/code&gt; command:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubeadm join --token &amp;lt;token&amp;gt; &amp;lt;k8s-master IP&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;install-a-pod-network&#34;&gt;Install a pod network&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl apply -f https://git.io/weave-kube
+daemonset &amp;quot;weave-net&amp;quot; created
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you run &lt;code&gt;kubectl get nodes&lt;/code&gt;, on your master, you should now see two nodes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get nodes
+NAME         STATUS    AGE
+k8s-master   Ready     1d
+k8s-node1    Ready     1d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Install the latest &lt;code&gt;dashboard&lt;/code&gt; and find the service ip:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl create -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
+$ kubectl get svc -n kube-system | grep dashboard
+kubernetes-dashboard   100.xx.xx.xxx    &amp;lt;nodes&amp;gt;       80/TCP          2h
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We will be using the &lt;code&gt;dashboard&lt;/code&gt; service ip later on. That was easy, don&amp;rsquo;t you
+think? You now have your own Kubernetes cluster running.&lt;/p&gt;
+
+&lt;h4 id=&#34;using-traefik-as-ingress-controller-and-reverse-proxy&#34;&gt;Using &lt;code&gt;traefik&lt;/code&gt; as &lt;code&gt;ingress-controller&lt;/code&gt; and reverse proxy&lt;/h4&gt;
+
+&lt;p&gt;Using &lt;code&gt;CNI&lt;/code&gt; for the pod network comes with a price tag. You can&amp;rsquo;t use &lt;code&gt;hostPort&lt;/code&gt;
+in your pods right know. Im sure this will be fixed in later versions but right
+now that&amp;rsquo;s a problem. A &lt;code&gt;ingress-controller&lt;/code&gt; uses &lt;code&gt;hostPort&lt;/code&gt; to expose the
+cluster.&lt;/p&gt;
+
+&lt;p&gt;The solution I found is to use a reverse proxy running as a static pod on one
+of the nodes (I choose &lt;code&gt;k8s-node1&lt;/code&gt;) and configuring it with &lt;code&gt;hostNetwork: true&lt;/code&gt;.
+Traefik is a reverse proxy written in Go and we will be using it for securing
+the &lt;code&gt;dashboard&lt;/code&gt; with basic authentication and for proxying request to the
+&lt;code&gt;ingress-controller&lt;/code&gt; which happens also be &lt;code&gt;traefik&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s start with installing &lt;code&gt;traefik&lt;/code&gt; as &lt;code&gt;ingress-controller&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: traefik-ingress-lb
+  name: traefik-lb
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: traefik-ingress-lb
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: traefik-ingress-lb
+    spec:
+      containers:
+      - args:
+        - --kubernetes
+        image: traefik:v1.0.0
+        imagePullPolicy: IfNotPresent
+        name: traefik-lb
+        ports:
+        - containerPort: 80
+          name: web
+          protocol: TCP
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see there&amp;rsquo;s no &lt;code&gt;hostPort&lt;/code&gt;. Next step is to expose the &lt;code&gt;traefik-lb&lt;/code&gt;
+as a service:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ kubectl expose deployment traefik-lb --port=80 --target-port=80 -n kube-system
+$ kubectl get svc -n kube-system | grep traefik-lb
+traefik-lb          100.xx.xxx.xxx   &amp;lt;none&amp;gt;        80/TCP          1d
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We now have two services &lt;code&gt;kubernetes-dashboard&lt;/code&gt; and &lt;code&gt;traefik-lb&lt;/code&gt;. These are
+the &lt;code&gt;backends&lt;/code&gt; for our &lt;code&gt;traefik&lt;/code&gt; reverse proxy.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the &lt;code&gt;traefic.toml&lt;/code&gt; file for our proxy:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;logLevel = &amp;quot;DEBUG&amp;quot;
+defaultEntryPoints = [&amp;quot;http&amp;quot;, &amp;quot;https&amp;quot;]
+
+[entryPoints]
+  [entryPoints.http]
+  address = &amp;quot;:80&amp;quot;
+    [entryPoints.http.redirect]
+    entryPoint = &amp;quot;https&amp;quot;
+  [entryPoints.https]
+  address = &amp;quot;:443&amp;quot;
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      CertFile = &amp;quot;/etc/traefik/server.crt&amp;quot;
+      KeyFile = &amp;quot;/etc/traefik/server.key&amp;quot;
+  [entryPoints.https2]
+  address = &amp;quot;:8443&amp;quot;
+    [entryPoints.https2.tls]
+      [[entryPoints.https2.tls.certificates]]
+      CertFile = &amp;quot;/etc/traefik/server.crt&amp;quot;
+      KeyFile = &amp;quot;/etc/traefik/server.key&amp;quot;
+    [entryPoints.https2.auth.basic]
+    users = [ &amp;quot;test:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/&amp;quot; ]
+
+[web]
+address = &amp;quot;:6443&amp;quot;
+CertFile = &amp;quot;/etc/traefik/server.crt&amp;quot;
+KeyFile = &amp;quot;/etc/traefik/server.key&amp;quot;
+ReadOnly = true
+  [web.auth.basic]
+  users = [ &amp;quot;test:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/&amp;quot; ]
+
+[file]
+filename = &amp;quot;/etc/traefik/rules.toml&amp;quot;
+watch = true
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Save the file to &lt;code&gt;/etc/traefik&lt;/code&gt; directory on the &lt;code&gt;k8s-node1&lt;/code&gt;.
+Use &lt;code&gt;htpasswd&lt;/code&gt; to generate a user name and password and edit the file. Change
+the &lt;code&gt;CertFile:&lt;/code&gt; and &lt;code&gt;KeyFile:&lt;/code&gt; to point to your wildcard certificate and key.
+We&amp;rsquo;re using three &lt;code&gt;entryPoints&lt;/code&gt;. Port &lt;code&gt;80&lt;/code&gt; and &lt;code&gt;443&lt;/code&gt; is reserved for our
+services in the cluster, &lt;code&gt;8443&lt;/code&gt; is used for the &lt;code&gt;kubernetes-dashboard&lt;/code&gt; and port
+&lt;code&gt;6443&lt;/code&gt; is used for the &lt;code&gt;traefik webui&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Next we need to configure traefik &lt;code&gt;frontend&lt;/code&gt;:s and &lt;code&gt;backend&lt;/code&gt;:s in a configuration
+file: &lt;code&gt;/etc/traefik/rules.toml&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[frontends]
+
+  [frontends.frontend1]
+  passHostHeader = true
+  backend = &amp;quot;dashboard-backend&amp;quot;
+  entrypoints = [&amp;quot;https2&amp;quot;]
+    [frontends.frontend1.routes.test_1]
+    rule = &amp;quot;Host:dashboard.mydomain.com&amp;quot;
+
+  [frontends.frontend2]
+  passHostHeader = true
+  backend = &amp;quot;k8s&amp;quot;
+    [frontends.frontend2.routes.default]
+    rule = &amp;quot;Host:{subdomain:[a-z]+}.mydomain.com&amp;quot;
+
+[backends]
+  [backends.dashboard-backend]
+
+    [backends.dashboard-backend.LoadBalancer]
+    method = &amp;quot;wrr&amp;quot;
+
+    [backends.dashboard-backend.servers.server1]
+    url = &amp;quot;http://100.xx.xx.xxx:80&amp;quot;
+
+   [backends.k8s]
+
+     [backends.k8s.LoadBalancer]
+     method = &amp;quot;wrr&amp;quot;
+
+     [backends.k8s.servers.server1]
+     url = &amp;quot;http://100.xx.xx.xxx:80&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Change the ip of the &lt;code&gt;backends.dashboard-backend.servers.server1&lt;/code&gt; &lt;code&gt;url&lt;/code&gt; to your
+&lt;code&gt;kubernetes-dashboard&lt;/code&gt; service and change the ip of the
+&lt;code&gt;backends.k8s.servers.server1&lt;/code&gt; &lt;code&gt;url&lt;/code&gt; to the &lt;code&gt;traefik-lb&lt;/code&gt; service. You also need
+to edit the domain so that it matches your wildcard certificate.&lt;/p&gt;
+
+&lt;p&gt;Now it&amp;rsquo;s time to create our static pod. Copy the following to
+&lt;code&gt;/etc/kubernetes/manifests/traefik.yaml&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: traefik
+  name: traefik
+  namespace: kube-system
+spec:
+  containers:
+  - image: traefik:v1.1.0-rc1
+    imagePullPolicy: IfNotPresent
+    name: traefik
+    resources: {}
+    volumeMounts:
+    - mountPath: /etc/traefik
+      name: config
+      readOnly: false
+    ports:
+    - name: http
+      containerPort: 80
+      hostPort: 80
+      protocol: TCP
+    - name: https
+      containerPort: 443
+      hostPort: 443
+      protocol: TCP
+    - name: webui
+      containerPort: 6443
+      hostPort: 6443
+      protocol: TCP
+    - name: dashboard
+      containerPort: 8443
+      hostPort: 8443
+      protocol: TCP
+  hostNetwork: true
+  restartPolicy: Always
+  securityContext: {}
+  volumes:
+  - name: config
+    hostPath:
+      path: /etc/traefik
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The final step is to create a DNS A record pointing to the &lt;code&gt;k8s-node1&lt;/code&gt;:s public&lt;br /&gt;
+IP.&lt;/p&gt;
+
+&lt;p&gt;Time to check if everything is working:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ # The dashbord requires authentication
+$ curl -s https://dashbord.mydomain.com:8443
+401 Unauthorized
+$
+$ # The traefik webui also requires authentication
+$ curl -s https://webui.mydomain.com:6443
+401 Unauthorized
+$
+$ # All other requests on port 80 and 443 is forward to k8s and traefik-lb
+$ curl -s http://anyapp.mydomain.com.org
+404 page not found
+$ curl -s https://anyapp.mydomain.com.org
+404 page not found
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Ok, it seems to work. I leave it up to you to explore the &lt;code&gt;dashboard&lt;/code&gt; and
+&lt;code&gt;traefik&lt;/code&gt; &lt;code&gt;webui&lt;/code&gt; in you favorite browser.&lt;/p&gt;
+
+&lt;h4 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h4&gt;
+
+&lt;p&gt;We now got a secured Kubernetes cluster that we can use for hosting all our apps
+and services. In the last post in this series we will setup &lt;code&gt;PersistentVolume&lt;/code&gt;:s
+using &lt;em&gt;GlusterFS&lt;/em&gt;.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Setting up Kubernetes on Scaleway - Part 1</title>
@@ -68,7 +386,7 @@ create a &lt;code&gt;sloop.conf&lt;/code&gt; file in the Sloop directory that lo
 
 &lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;K8S_VERSION=v1.3.5
 FLANNEL_NETWORK=10.10.0.0/16
-FLANNEL_BACKEND=host-gw
+FLANNEL_BACKEND=udp
 
 # This entry is only required on your workers
 MASTER_IP=&amp;lt;your master server Public-IP&amp;gt;
@@ -2108,80 +2426,6 @@ On the other hand I don&amp;rsquo;t want to spend a fortune building a DC just f
 &lt;/figure&gt;
 
 
-</description>
-    </item>
-    
-    <item>
-      <title>Thank you Java, but it&#39;s time to Go</title>
-      <link>http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/</link>
-      <pubDate>Thu, 04 Feb 2016 20:56:35 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2016/02/04/thank-you-java-but-its-time-to-go/</guid>
-      <description>&lt;p&gt;I&amp;rsquo;ve been a dedicated Java developer since 1998 and it&amp;rsquo;s been a great tool.
-But recently there&amp;rsquo;s a couple of things I&amp;rsquo;ve been fretting about. I always been
-slow using keyboard (never learnt how to use it correctly). When programming
-that&amp;rsquo;s not always a bad thing, it gives you time to think about what you&amp;rsquo;re
-writing.
-But Java is very verbose and all those &lt;code&gt;private&lt;/code&gt;, &lt;code&gt;public&lt;/code&gt;, &lt;code&gt;;&lt;/code&gt;, &lt;code&gt;getXXX&lt;/code&gt;,
-&lt;code&gt;setXXX&lt;/code&gt; kind of gets in the way.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;package main
-
-import &amp;quot;fmt&amp;quot;
-
-type Vertex struct {
-	X int
-	Y int
-}
-
-func main() {
-	v := Vertex{1, 2}
-	v.X = 4
-	fmt.Println(v.X)
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Another thing that turns out to be complicated is coding standards. It&amp;rsquo;s all
-well when your on a greenfield project and the team can decide their own rules.
-But have you ever worked with legacy code that&amp;rsquo;s been abused for several years
-buy developers who rather wish they were on that super cool project? I know you
-can&amp;rsquo;t blame &lt;code&gt;Java&lt;/code&gt; for this but it&amp;rsquo;s still a problem. Coding standards are like
-fashion and every developer has an opinion on where to put the &lt;code&gt;{}&lt;/code&gt; and don&amp;rsquo;t
-mention line endings when your in a mixed Windows and *nix environment.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# Gofmt is a tool that automatically formats Go source code
-$go fmt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;When Java was released in 1995 the promise &lt;em&gt;&amp;ldquo;write once, run anywhere&amp;rdquo;&lt;/em&gt; sounded
-very tempting but has shown not to be altogether true. There have been, and
-will always be, bugs and small differences in the JVM which means that your
-program will always be dependent on the version of the JVM running your byte
-code. That means you have at least two artifacts to consider and
-one of them is out of your control.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# Static compiled go binary that can be used in a Docker image.
-# The binary is compiled using golang Docker image.
-$CGO_ENABLED=0 GOOS=linux go build -ldflags &amp;quot;-s&amp;quot; -a -installsuffix cgo -o main
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If your like me feeling young and haven&amp;rsquo;t aged a day since 1995, the truth is
-time goes by. Even if you do your best to keep young, it&amp;rsquo;s hard to change. Java
-has done a good job: HotSpot, Regular expressions, NIO, Generics, Annotations,
-primitive wrapper classes with autoboxing, Enumerations, Varargs and Lambda
-Expressions. Just take a look at the
-&lt;a href=&#34;https://en.wikipedia.org/wiki/Java_version_history&#34;&gt;Java version history&lt;/a&gt;. But
-all this adds up and gains weight. Java has become hard to learn and understand
-and there are many pitfalls and compromises. Some times the right decision is
-to start all over and make something new based on what you&amp;rsquo;ve learnt.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;# OSX
-$open http://tour.golang.org/welcome/1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I&amp;rsquo;m keeping Java in my toolbox but I&amp;rsquo;ve started using
-&lt;a href=&#34;https://golang.org/&#34;&gt;The Go Programming Language&lt;/a&gt; as my new tool and
-it&amp;rsquo;s great fun.&lt;/p&gt;
 </description>
     </item>
     

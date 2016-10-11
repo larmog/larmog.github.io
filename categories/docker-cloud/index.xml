@@ -68,7 +68,7 @@ create a &lt;code&gt;sloop.conf&lt;/code&gt; file in the Sloop directory that lo
 
 &lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;K8S_VERSION=v1.3.5
 FLANNEL_NETWORK=10.10.0.0/16
-FLANNEL_BACKEND=host-gw
+FLANNEL_BACKEND=udp
 
 # This entry is only required on your workers
 MASTER_IP=&amp;lt;your master server Public-IP&amp;gt;

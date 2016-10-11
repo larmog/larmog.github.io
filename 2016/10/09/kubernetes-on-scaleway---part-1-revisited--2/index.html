@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Kubernetes on Scaleway - Part 1 (Revisited) &amp; 2</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Kubernetes on Scaleway - Part 1 (Revisited) &amp; 2</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/cloud/">Cloud</a>
+            
+          
+          </p>
+          <p>
+
+<p><a href="http://scaleway.com">
+<img src="https://www.scaleway.com/img/scaleway.f0e4.svg" style="float:right;height:80px"></a></p>
+
+<p>Things doesn&rsquo;t always turn out as planned. This is specially true when it comes
+to this series, on how to setup <em>Kubernetes</em> on <em>Scaleway</em>. The plan was that
+part 2 would be about setting up an <code>ingress-controller</code> and securing the
+<code>api-server</code> and <code>dashboard</code>. But in the meantime, while I was struggling with
+getting <code>weave</code> working on <code>ARM</code> and re-writing my own little project <code>sloop</code>,
+Kubernetes <code>v1.4.0</code> was released with the <code>kubeadm</code> tool.</p>
+
+<p>With the tool <code>kubeadm</code>, you can easily install a secure Kubernetes cluster. It
+makes projects like my own <code>Sloop</code> unnecessary, and that&rsquo;s a good thing.</p>
+
+<p>In this post I will show how to setup Kubernetes using <code>kubeadm</code> and setting up
+an <code>ingress-controller</code> and how to secure your <code>api-server</code> and <code>dashboard</code>. We
+won&rsquo;t be using <code>ARM</code> for this, that&rsquo;s a topic for another blog post.</p>
+
+<p>Here&rsquo;s the recipe:</p>
+
+<pre><code>1 Scaleway account
+2 VC1S servers
+1 wildcard certificate
+2 kubeadm
+1 DaemonSet weave-kube CNI plugin
+1 traefik reverse proxy (http://traefik.io)
+1 traefik ingress-controller
+1 domain name
+1 DNS A record
+</code></pre>
+
+<p>You can replace the domain and <code>DNS A</code> record with entries in your <code>hosts</code> file
+if you just want to try this out.</p>
+
+<p>Let&rsquo;s get started!</p>
+
+<h4 id="create-master-node">Create master node</h4>
+
+<p>Creating your Kubernetes cluster using <code>kubeadm</code> is described excellent in this
+<a href="http://kubernetes.io/docs/getting-started-guides/kubeadm/">guide</a>. I only
+include the steps here for completeness.</p>
+
+<p>First thing is to create the <code>k8s-master</code> node:</p>
+
+<pre><code class="language-shell"># Create your master node:
+$ scw start -w $(scw create --name=&quot;k8s-master&quot; --commercial-type=&quot;VC1S&quot;  Docker)
+$ scw ps
+</code></pre>
+
+<p>Login to your <code>k8s-master</code> node and install the Kubernetes components:</p>
+
+<pre><code class="language-shell">$ curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+$ cat &lt;&lt;EOF &gt; /etc/apt/sources.list.d/kubernetes.list
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+$ apt-get update
+$ apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+$ kubeadm init
+</code></pre>
+
+<h4 id="create-your-worker-node">Create your worker node</h4>
+
+<p>Repeat the steps from installing the <code>k8s-master</code> but name the node: <code>k8s-node1</code>
+and use the <code>join</code> command:</p>
+
+<pre><code class="language-shell">$ kubeadm join --token &lt;token&gt; &lt;k8s-master IP&gt;
+</code></pre>
+
+<h4 id="install-a-pod-network">Install a pod network</h4>
+
+<pre><code class="language-shell">$ kubectl apply -f https://git.io/weave-kube
+daemonset &quot;weave-net&quot; created
+</code></pre>
+
+<p>If you run <code>kubectl get nodes</code>, on your master, you should now see two nodes:</p>
+
+<pre><code class="language-shell">$ kubectl get nodes
+NAME         STATUS    AGE
+k8s-master   Ready     1d
+k8s-node1    Ready     1d
+</code></pre>
+
+<p>Install the latest <code>dashboard</code> and find the service ip:</p>
+
+<pre><code class="language-shell">$ kubectl create -f https://rawgit.com/kubernetes/dashboard/master/src/deploy/kubernetes-dashboard.yaml
+$ kubectl get svc -n kube-system | grep dashboard
+kubernetes-dashboard   100.xx.xx.xxx    &lt;nodes&gt;       80/TCP          2h
+</code></pre>
+
+<p>We will be using the <code>dashboard</code> service ip later on. That was easy, don&rsquo;t you
+think? You now have your own Kubernetes cluster running.</p>
+
+<h4 id="using-traefik-as-ingress-controller-and-reverse-proxy">Using <code>traefik</code> as <code>ingress-controller</code> and reverse proxy</h4>
+
+<p>Using <code>CNI</code> for the pod network comes with a price tag. You can&rsquo;t use <code>hostPort</code>
+in your pods right know. Im sure this will be fixed in later versions but right
+now that&rsquo;s a problem. A <code>ingress-controller</code> uses <code>hostPort</code> to expose the
+cluster.</p>
+
+<p>The solution I found is to use a reverse proxy running as a static pod on one
+of the nodes (I choose <code>k8s-node1</code>) and configuring it with <code>hostNetwork: true</code>.
+Traefik is a reverse proxy written in Go and we will be using it for securing
+the <code>dashboard</code> with basic authentication and for proxying request to the
+<code>ingress-controller</code> which happens also be <code>traefik</code>.</p>
+
+<p>Let&rsquo;s start with installing <code>traefik</code> as <code>ingress-controller</code>:</p>
+
+<pre><code>apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    k8s-app: traefik-ingress-lb
+  name: traefik-lb
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: traefik-ingress-lb
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: traefik-ingress-lb
+    spec:
+      containers:
+      - args:
+        - --kubernetes
+        image: traefik:v1.0.0
+        imagePullPolicy: IfNotPresent
+        name: traefik-lb
+        ports:
+        - containerPort: 80
+          name: web
+          protocol: TCP
+</code></pre>
+
+<p>As you can see there&rsquo;s no <code>hostPort</code>. Next step is to expose the <code>traefik-lb</code>
+as a service:</p>
+
+<pre><code>$ kubectl expose deployment traefik-lb --port=80 --target-port=80 -n kube-system
+$ kubectl get svc -n kube-system | grep traefik-lb
+traefik-lb          100.xx.xxx.xxx   &lt;none&gt;        80/TCP          1d
+</code></pre>
+
+<p>We now have two services <code>kubernetes-dashboard</code> and <code>traefik-lb</code>. These are
+the <code>backends</code> for our <code>traefik</code> reverse proxy.</p>
+
+<p>Here&rsquo;s the <code>traefic.toml</code> file for our proxy:</p>
+
+<pre><code>logLevel = &quot;DEBUG&quot;
+defaultEntryPoints = [&quot;http&quot;, &quot;https&quot;]
+
+[entryPoints]
+  [entryPoints.http]
+  address = &quot;:80&quot;
+    [entryPoints.http.redirect]
+    entryPoint = &quot;https&quot;
+  [entryPoints.https]
+  address = &quot;:443&quot;
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      CertFile = &quot;/etc/traefik/server.crt&quot;
+      KeyFile = &quot;/etc/traefik/server.key&quot;
+  [entryPoints.https2]
+  address = &quot;:8443&quot;
+    [entryPoints.https2.tls]
+      [[entryPoints.https2.tls.certificates]]
+      CertFile = &quot;/etc/traefik/server.crt&quot;
+      KeyFile = &quot;/etc/traefik/server.key&quot;
+    [entryPoints.https2.auth.basic]
+    users = [ &quot;test:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/&quot; ]
+
+[web]
+address = &quot;:6443&quot;
+CertFile = &quot;/etc/traefik/server.crt&quot;
+KeyFile = &quot;/etc/traefik/server.key&quot;
+ReadOnly = true
+  [web.auth.basic]
+  users = [ &quot;test:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/&quot; ]
+
+[file]
+filename = &quot;/etc/traefik/rules.toml&quot;
+watch = true
+</code></pre>
+
+<p>Save the file to <code>/etc/traefik</code> directory on the <code>k8s-node1</code>.
+Use <code>htpasswd</code> to generate a user name and password and edit the file. Change
+the <code>CertFile:</code> and <code>KeyFile:</code> to point to your wildcard certificate and key.
+We&rsquo;re using three <code>entryPoints</code>. Port <code>80</code> and <code>443</code> is reserved for our
+services in the cluster, <code>8443</code> is used for the <code>kubernetes-dashboard</code> and port
+<code>6443</code> is used for the <code>traefik webui</code>.</p>
+
+<p>Next we need to configure traefik <code>frontend</code>:s and <code>backend</code>:s in a configuration
+file: <code>/etc/traefik/rules.toml</code></p>
+
+<pre><code>[frontends]
+
+  [frontends.frontend1]
+  passHostHeader = true
+  backend = &quot;dashboard-backend&quot;
+  entrypoints = [&quot;https2&quot;]
+    [frontends.frontend1.routes.test_1]
+    rule = &quot;Host:dashboard.mydomain.com&quot;
+
+  [frontends.frontend2]
+  passHostHeader = true
+  backend = &quot;k8s&quot;
+    [frontends.frontend2.routes.default]
+    rule = &quot;Host:{subdomain:[a-z]+}.mydomain.com&quot;
+
+[backends]
+  [backends.dashboard-backend]
+
+    [backends.dashboard-backend.LoadBalancer]
+    method = &quot;wrr&quot;
+
+    [backends.dashboard-backend.servers.server1]
+    url = &quot;http://100.xx.xx.xxx:80&quot;
+
+   [backends.k8s]
+
+     [backends.k8s.LoadBalancer]
+     method = &quot;wrr&quot;
+
+     [backends.k8s.servers.server1]
+     url = &quot;http://100.xx.xx.xxx:80&quot;
+</code></pre>
+
+<p>Change the ip of the <code>backends.dashboard-backend.servers.server1</code> <code>url</code> to your
+<code>kubernetes-dashboard</code> service and change the ip of the
+<code>backends.k8s.servers.server1</code> <code>url</code> to the <code>traefik-lb</code> service. You also need
+to edit the domain so that it matches your wildcard certificate.</p>
+
+<p>Now it&rsquo;s time to create our static pod. Copy the following to
+<code>/etc/kubernetes/manifests/traefik.yaml</code>:</p>
+
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: traefik
+  name: traefik
+  namespace: kube-system
+spec:
+  containers:
+  - image: traefik:v1.1.0-rc1
+    imagePullPolicy: IfNotPresent
+    name: traefik
+    resources: {}
+    volumeMounts:
+    - mountPath: /etc/traefik
+      name: config
+      readOnly: false
+    ports:
+    - name: http
+      containerPort: 80
+      hostPort: 80
+      protocol: TCP
+    - name: https
+      containerPort: 443
+      hostPort: 443
+      protocol: TCP
+    - name: webui
+      containerPort: 6443
+      hostPort: 6443
+      protocol: TCP
+    - name: dashboard
+      containerPort: 8443
+      hostPort: 8443
+      protocol: TCP
+  hostNetwork: true
+  restartPolicy: Always
+  securityContext: {}
+  volumes:
+  - name: config
+    hostPath:
+      path: /etc/traefik
+</code></pre>
+
+<p>The final step is to create a DNS A record pointing to the <code>k8s-node1</code>:s public<br />
+IP.</p>
+
+<p>Time to check if everything is working:</p>
+
+<pre><code>$ # The dashbord requires authentication
+$ curl -s https://dashbord.mydomain.com:8443
+401 Unauthorized
+$
+$ # The traefik webui also requires authentication
+$ curl -s https://webui.mydomain.com:6443
+401 Unauthorized
+$
+$ # All other requests on port 80 and 443 is forward to k8s and traefik-lb
+$ curl -s http://anyapp.mydomain.com.org
+404 page not found
+$ curl -s https://anyapp.mydomain.com.org
+404 page not found
+</code></pre>
+
+<p>Ok, it seems to work. I leave it up to you to explore the <code>dashboard</code> and
+<code>traefik</code> <code>webui</code> in you favorite browser.</p>
+
+<h4 id="conclusion">Conclusion</h4>
+
+<p>We now got a secured Kubernetes cluster that we can use for hosting all our apps
+and services. In the last post in this series we will setup <code>PersistentVolume</code>:s
+using <em>GlusterFS</em>.</p>
+</p>
+          <p>9 Oct 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/traefik/">#Traefik</a>
+              
+                <a href="http://larmog.github.io//tags/scaleway/">#Scaleway</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f&text=Kubernetes%20on%20Scaleway%20-%20Part%201%20%28Revisited%29%20%26%202&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f&title=Kubernetes%20on%20Scaleway%20-%20Part%201%20%28Revisited%29%20%26%202" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f&title=Kubernetes%20on%20Scaleway%20-%20Part%201%20%28Revisited%29%20%26%202" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f&mini=true&title=Kubernetes%20on%20Scaleway%20-%20Part%201%20%28Revisited%29%20%26%202&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Kubernetes%20on%20Scaleway%20-%20Part%201%20%28Revisited%29%20%26%202&body=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f09%2fkubernetes-on-scaleway---part-1-revisited--2%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+
