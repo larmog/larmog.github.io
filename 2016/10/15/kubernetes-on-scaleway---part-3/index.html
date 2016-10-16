@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Kubernetes on Scaleway - Part 3</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Kubernetes on Scaleway - Part 3</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/cloud/">Cloud</a>
+            
+          
+          </p>
+          <p>
+
+<p>This is the final part in a series about setting up Kubernetes on <em>Scaleway</em>.
+This final part is about setting up storage for your cluster.
+<img src="/media/k8s-glusterfs-scaleway.png" style="float:right;height:150px">
+Most of the steps here is already described in an earlier post:
+<a href="/2016/02/22/glusterfs-on-kubernetes-arm/"><em>GlusterFS On Kubernetes ARM</em></a>
+ that I wrote a couple of month back. You can also find the earlier posts in this
+series here:
+<a href="/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/"><em>Part 1</em></a>
+and <a href="/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/"><em>Part 1 (revisited) and Part 2</em></a>.</p>
+
+<p style="margin-bottom:40px"></p>
+
+<p>The solution described here is not the only way you can use to set up <em>GlusterFS</em>
+for your cluster. You can also use a <code>DaemonSet</code> or a <code>PetSet</code> and run your
+<code>glusterfs-servers</code> as containers, but I like the separation of concerns, using
+two dedicated servers.</p>
+
+<h4 id="setting-up-glusterfs-server-nodes">Setting up <code>glusterfs-server</code> nodes</h4>
+
+<p>I&rsquo;ve chosen to use two servers for a replica set of 2. The first thing we need
+to do is to create two additional servers.</p>
+
+<pre><code class="language-shell">$ for i in {1..2}; do
+    scw start $(scw create --name gfs-$i --commercial-type=&quot;VC1S&quot; Ubuntu_Xenial)
+done
+</code></pre>
+
+<p>&hellip; and install <code>glusterfs-server</code> and connect the servers using their private
+DNS name:</p>
+
+<pre><code class="language-shell">$ apt-get update &amp;&amp; apt-get install -y glusterfs-server attr
+$ gluster peer probe xxxxxx.priv.cloud.scaleway.com
+</code></pre>
+
+<h5 id="creating-volumes">Creating volumes</h5>
+
+<p>I create the volumes under the root partition, which is not recommended.
+I leave it up to you mount an additional volume (disk) on your nodes for
+<code>glusterfs volume</code> storage. We will create four volumes.</p>
+
+<p>Create the volume directories on node <code>gfs-1</code>:</p>
+
+<pre><code class="language-shell">$ for i in {0..3}; do
+    mkdir -p /data/brick2/vol$i
+done
+</code></pre>
+
+<p>&hellip; and on <code>gfs-2</code>, then create the volumes:</p>
+
+<pre><code class="language-shell">$ # Create and start the volumes
+$ for i in {0..3}; do
+    mkdir -p /data/brick2/vol$i \
+    &amp;&amp; gluster volume create vol$i replica 2 \
+    &lt;your gfs-1 machine id&gt;.priv.cloud.scaleway.com:/data/brick1/vol$i \
+    &lt;your gfs-2 machine id&gt;.priv.cloud.scaleway.com:/data/brick2/vol$i force \
+    &amp;&amp; gluster volume start vol$i
+done
+$ # Check your volumes
+$ gluster volume info
+</code></pre>
+
+<p>The <code>force</code> flag is used because we&rsquo;re using the root partition, and should not
+be required if you use another partition.</p>
+
+<h4 id="install-glusterfs-client-on-your-k8s-nodes">Install <code>glusterfs-client</code> on your k8s nodes</h4>
+
+<p>Next step is to install <code>glusterfs-client</code> on all your <em>Kubernetes</em> nodes:</p>
+
+<pre><code class="language-shell">$ apt-get install -y glusterfs-client attr
+</code></pre>
+
+<h4 id="create-the-glusterfs-endpoint">Create the <code>glusterfs-endpoint</code></h4>
+
+<p>The final step to setup <em>GlusterFS</em> is to create the endpoint.</p>
+
+<p>Use <code>kubectl</code> and create the following <code>endpoint</code> and <code>service</code>, don&rsquo;t
+forget to replace the IP:s with your own privare IP:s of your <code>gfs-1</code> and
+<code>gfs-2</code> servers:</p>
+
+<pre><code>apiVersion: v1
+kind: Endpoints
+metadata:
+  name: glusterfs-cluster
+  namespace: default
+subsets:
+- addresses:
+  - ip: 10.x.x.x
+  - ip: 10.x.x.y
+  ports:
+  - port: 1
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glusterfs-cluster
+  namespace: default
+spec:
+  ports:
+  - port: 1
+    protocol: TCP
+    targetPort: 1
+</code></pre>
+
+<p>And finally we can create four <code>PersistentVolume</code>:s using our <em>GlusterFS</em>
+volumes.</p>
+
+<pre><code>apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol0
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol1
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol1
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol2
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol2
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol3
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol3
+    readOnly: false
+</code></pre>
+
+<p>You can also create <code>PersistentVolumeClaim</code>:s that uses your <code>PersistentVolume</code>:s
+but maybe it&rsquo;s better to wait until it&rsquo;s time to use them from your apps.
+Notice that I have used <code>ReadWriteOnce</code> on all nodes and
+<code>persistentVolumeReclaimPolicy: Retain</code>. This means that the volumes can not be
+shared and you need to reclaim them manually.</p>
+
+<pre><code>kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-3
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+</code></pre>
+
+<h4 id="a-final-word-about-file-permissions">A final word about file permissions</h4>
+
+<p>Depending on if your containers is running as root (<code>UID 0</code>) or any other <code>UID</code>
+you may need to configure your <code>securityContext</code>.</p>
+
+<h4 id="wrap-up">Wrap up</h4>
+
+<p>This was the final part on setting up <em>Kubernetes</em> on <em>Scaleway</em>. The
+installation can obviously be improved, for example the <code>traefik</code> proxy
+does currently not support <code>url re-writes</code> which may be a problem for you. But
+you can always replace it with <code>nginx</code>. To protect your <code>glusterfs-server</code> nodes
+and save some IP-adresses, you can remove the public IP:s from your servers.
+But remember you need to assign one, if you want to upgrade the server.</p>
+
+<p>As always, feedback is very welcome.</p>
+</p>
+          <p>15 Oct 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/glusterfs/">#GlusterFS</a>
+              
+                <a href="http://larmog.github.io//tags/scaleway/">#Scaleway</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f&text=Kubernetes%20on%20Scaleway%20-%20Part%203&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f&title=Kubernetes%20on%20Scaleway%20-%20Part%203" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f&title=Kubernetes%20on%20Scaleway%20-%20Part%203" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f&mini=true&title=Kubernetes%20on%20Scaleway%20-%20Part%203&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Kubernetes%20on%20Scaleway%20-%20Part%203&body=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f15%2fkubernetes-on-scaleway---part-3%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

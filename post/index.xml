@@ -7,8 +7,253 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sun, 09 Oct 2016 22:00:00 +0200</lastBuildDate>
+    <lastBuildDate>Sat, 15 Oct 2016 20:58:26 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Kubernetes on Scaleway - Part 3</title>
+      <link>http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/</link>
+      <pubDate>Sat, 15 Oct 2016 20:58:26 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/</guid>
+      <description>
+
+&lt;p&gt;This is the final part in a series about setting up Kubernetes on &lt;em&gt;Scaleway&lt;/em&gt;.
+This final part is about setting up storage for your cluster.
+&lt;img src=&#34;http://larmog.github.io/media/k8s-glusterfs-scaleway.png&#34; style=&#34;float:right;height:150px&#34;&gt;
+Most of the steps here is already described in an earlier post:
+&lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;&lt;em&gt;GlusterFS On Kubernetes ARM&lt;/em&gt;&lt;/a&gt;
+ that I wrote a couple of month back. You can also find the earlier posts in this
+series here:
+&lt;a href=&#34;http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/&#34;&gt;&lt;em&gt;Part 1&lt;/em&gt;&lt;/a&gt;
+and &lt;a href=&#34;http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/&#34;&gt;&lt;em&gt;Part 1 (revisited) and Part 2&lt;/em&gt;&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p style=&#34;margin-bottom:40px&#34;&gt;&lt;/p&gt;
+
+&lt;p&gt;The solution described here is not the only way you can use to set up &lt;em&gt;GlusterFS&lt;/em&gt;
+for your cluster. You can also use a &lt;code&gt;DaemonSet&lt;/code&gt; or a &lt;code&gt;PetSet&lt;/code&gt; and run your
+&lt;code&gt;glusterfs-servers&lt;/code&gt; as containers, but I like the separation of concerns, using
+two dedicated servers.&lt;/p&gt;
+
+&lt;h4 id=&#34;setting-up-glusterfs-server-nodes&#34;&gt;Setting up &lt;code&gt;glusterfs-server&lt;/code&gt; nodes&lt;/h4&gt;
+
+&lt;p&gt;I&amp;rsquo;ve chosen to use two servers for a replica set of 2. The first thing we need
+to do is to create two additional servers.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ for i in {1..2}; do
+    scw start $(scw create --name gfs-$i --commercial-type=&amp;quot;VC1S&amp;quot; Ubuntu_Xenial)
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip; and install &lt;code&gt;glusterfs-server&lt;/code&gt; and connect the servers using their private
+DNS name:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ apt-get update &amp;amp;&amp;amp; apt-get install -y glusterfs-server attr
+$ gluster peer probe xxxxxx.priv.cloud.scaleway.com
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;creating-volumes&#34;&gt;Creating volumes&lt;/h5&gt;
+
+&lt;p&gt;I create the volumes under the root partition, which is not recommended.
+I leave it up to you mount an additional volume (disk) on your nodes for
+&lt;code&gt;glusterfs volume&lt;/code&gt; storage. We will create four volumes.&lt;/p&gt;
+
+&lt;p&gt;Create the volume directories on node &lt;code&gt;gfs-1&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ for i in {0..3}; do
+    mkdir -p /data/brick2/vol$i
+done
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&amp;hellip; and on &lt;code&gt;gfs-2&lt;/code&gt;, then create the volumes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Create and start the volumes
+$ for i in {0..3}; do
+    mkdir -p /data/brick2/vol$i \
+    &amp;amp;&amp;amp; gluster volume create vol$i replica 2 \
+    &amp;lt;your gfs-1 machine id&amp;gt;.priv.cloud.scaleway.com:/data/brick1/vol$i \
+    &amp;lt;your gfs-2 machine id&amp;gt;.priv.cloud.scaleway.com:/data/brick2/vol$i force \
+    &amp;amp;&amp;amp; gluster volume start vol$i
+done
+$ # Check your volumes
+$ gluster volume info
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The &lt;code&gt;force&lt;/code&gt; flag is used because we&amp;rsquo;re using the root partition, and should not
+be required if you use another partition.&lt;/p&gt;
+
+&lt;h4 id=&#34;install-glusterfs-client-on-your-k8s-nodes&#34;&gt;Install &lt;code&gt;glusterfs-client&lt;/code&gt; on your k8s nodes&lt;/h4&gt;
+
+&lt;p&gt;Next step is to install &lt;code&gt;glusterfs-client&lt;/code&gt; on all your &lt;em&gt;Kubernetes&lt;/em&gt; nodes:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ apt-get install -y glusterfs-client attr
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;create-the-glusterfs-endpoint&#34;&gt;Create the &lt;code&gt;glusterfs-endpoint&lt;/code&gt;&lt;/h4&gt;
+
+&lt;p&gt;The final step to setup &lt;em&gt;GlusterFS&lt;/em&gt; is to create the endpoint.&lt;/p&gt;
+
+&lt;p&gt;Use &lt;code&gt;kubectl&lt;/code&gt; and create the following &lt;code&gt;endpoint&lt;/code&gt; and &lt;code&gt;service&lt;/code&gt;, don&amp;rsquo;t
+forget to replace the IP:s with your own privare IP:s of your &lt;code&gt;gfs-1&lt;/code&gt; and
+&lt;code&gt;gfs-2&lt;/code&gt; servers:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: Endpoints
+metadata:
+  name: glusterfs-cluster
+  namespace: default
+subsets:
+- addresses:
+  - ip: 10.x.x.x
+  - ip: 10.x.x.y
+  ports:
+  - port: 1
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glusterfs-cluster
+  namespace: default
+spec:
+  ports:
+  - port: 1
+    protocol: TCP
+    targetPort: 1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And finally we can create four &lt;code&gt;PersistentVolume&lt;/code&gt;:s using our &lt;em&gt;GlusterFS&lt;/em&gt;
+volumes.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol0
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol0
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol1
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol1
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol2
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol2
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-vol3
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  glusterfs:
+    endpoints: glusterfs-cluster
+    path: vol3
+    readOnly: false
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;You can also create &lt;code&gt;PersistentVolumeClaim&lt;/code&gt;:s that uses your &lt;code&gt;PersistentVolume&lt;/code&gt;:s
+but maybe it&amp;rsquo;s better to wait until it&amp;rsquo;s time to use them from your apps.
+Notice that I have used &lt;code&gt;ReadWriteOnce&lt;/code&gt; on all nodes and
+&lt;code&gt;persistentVolumeReclaimPolicy: Retain&lt;/code&gt;. This means that the volumes can not be
+shared and you need to reclaim them manually.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-1
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-2
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-3
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;a-final-word-about-file-permissions&#34;&gt;A final word about file permissions&lt;/h4&gt;
+
+&lt;p&gt;Depending on if your containers is running as root (&lt;code&gt;UID 0&lt;/code&gt;) or any other &lt;code&gt;UID&lt;/code&gt;
+you may need to configure your &lt;code&gt;securityContext&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;wrap-up&#34;&gt;Wrap up&lt;/h4&gt;
+
+&lt;p&gt;This was the final part on setting up &lt;em&gt;Kubernetes&lt;/em&gt; on &lt;em&gt;Scaleway&lt;/em&gt;. The
+installation can obviously be improved, for example the &lt;code&gt;traefik&lt;/code&gt; proxy
+does currently not support &lt;code&gt;url re-writes&lt;/code&gt; which may be a problem for you. But
+you can always replace it with &lt;code&gt;nginx&lt;/code&gt;. To protect your &lt;code&gt;glusterfs-server&lt;/code&gt; nodes
+and save some IP-adresses, you can remove the public IP:s from your servers.
+But remember you need to assign one, if you want to upgrade the server.&lt;/p&gt;
+
+&lt;p&gt;As always, feedback is very welcome.&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Kubernetes on Scaleway - Part 1 (Revisited) &amp; 2</title>
@@ -2360,72 +2605,6 @@ and complete the installation.&lt;/p&gt;
 &lt;p&gt;In &lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Part 2&lt;/a&gt; I will
 explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose your services outside your
 cluster.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Kubernetes On ARM</title>
-      <link>http://larmog.github.io/2016/02/06/kubernetes-on-arm/</link>
-      <pubDate>Sat, 06 Feb 2016 10:33:08 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2016/02/06/kubernetes-on-arm/</guid>
-      <description>&lt;p&gt;I really like Kubernetes for orchestrating Docker containers. If you&amp;rsquo;re don&amp;rsquo;t
-familiar with Kubernetes I can highly recommend to take a look at
-&lt;a href=&#34;http://kubernetes.io&#34;&gt;kubernetes.io&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;You can easily run you&amp;rsquo;re own Kubernetes cluster on your local machine using
-Vagrant or run Kubernetes in the cloud using AWS, Azure or Google Compute.
-But I like a more hands on solution and I always wanted my own &amp;ldquo;data center&amp;rdquo;.
-On the other hand I don&amp;rsquo;t want to spend a fortune building a DC just for fun.&lt;/p&gt;
-
-&lt;p&gt;A great alternative is to use ARM SoC boards like Raspberry PI. Thank&amp;rsquo;s to
-&lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas Käldström&lt;/a&gt; and
-&lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;Hypriot&lt;/a&gt; this is a rather straight forward process.&lt;/p&gt;
-
-&lt;p&gt;I used the &lt;code&gt;hypriotos&lt;/code&gt; image and Lucas &lt;code&gt;deb&lt;/code&gt;-package to install &lt;code&gt;kube-config&lt;/code&gt;.&lt;/p&gt;
-
-
-&lt;figure&gt;
-  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
-    &lt;div class=&#34;card-content black-text&#34;&gt;
-      
-      &lt;figcaption&gt;
-          &lt;span class=&#34;card-title black-text&#34;&gt;Six Raspberry Pi:s in a cluster&lt;/span&gt;
-          
-      &lt;/figcaption&gt;
-      
-      
-          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/IMG_1936.png&#34;  /&gt;
-      
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/figure&gt;
-
-
-
-
-&lt;figure&gt;
-  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
-    &lt;div class=&#34;card-content black-text&#34;&gt;
-      
-      &lt;figcaption&gt;
-          &lt;span class=&#34;card-title black-text&#34;&gt;Nodes in my cluster&lt;/span&gt;
-          &lt;p&gt;
-          Here you can see the nodes in the cluster. I&amp;#39;m using the service-loadbalancer addon (a topic for another post).
-          
-              
-          
-        &lt;/p&gt; 
-      &lt;/figcaption&gt;
-      
-      
-          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/k8s.png&#34; alt=&#34;Here you can see the nodes in the cluster. I&amp;#39;m using the service-loadbalancer addon (a topic for another post).&#34; /&gt;
-      
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/figure&gt;
-
-
 </description>
     </item>
     
