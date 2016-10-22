@@ -224,7 +224,7 @@ file: `/etc/traefik/rules.toml`
   passHostHeader = true
   backend = "k8s"
     [frontends.frontend2.routes.default]
-    rule = "Host:{subdomain:[a-z]+}.mydomain.com"
+    rule = "HostRegexp:{subdomain:[a-z]+}.mydomain.com"
 
 [backends]
   [backends.dashboard-backend]
