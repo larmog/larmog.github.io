@@ -4,7 +4,7 @@ draft = false
 title = "Building your Kubernetes cluster in minutes"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "ARM", "ARM64", "AMD64"]
-categories = [ "Development", "Kubernetes", "Docker" ]
+categories = [ "Development", "Kubernetes", "Docker", "ARM", "Raspberry PI" ]
 
 +++
 

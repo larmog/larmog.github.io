@@ -3,7 +3,7 @@ date = "2016-03-13T22:44:21+01:00"
 draft = false
 title = "ELK cluster on Kubernetes-On-ARM - Part 1"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "Elasticsearch", "Logstash", "Kibana", "ARM"]
-categories = [ "Development", "Kubernetes", "Docker" ]
+categories = [ "Development", "Kubernetes", "Docker", "ARM", "Raspberry PI" ]
 +++
 
 One of the most important parts of running a cluster is to gain knowledge of

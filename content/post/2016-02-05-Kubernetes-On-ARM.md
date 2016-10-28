@@ -4,7 +4,7 @@ draft = false
 title = "Kubernetes On ARM"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI" ]
-categories = [ "Development", "Docker" ]
+categories = [ "Development", "Kubernetes", "Docker", "ARM", "Raspberry PI" ]
 +++
 
 I really like Kubernetes for orchestrating Docker containers. If you're don't

@@ -4,7 +4,7 @@ draft = false
 title = "GlusterFS On Kubernetes ARM"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "GlusterFS", "Gogs", "Drone", "MySQL", "ARM"]
-categories = [ "Development", "Kubernetes", "Docker" ]
+categories = [ "Development", "Kubernetes", "Docker", "ARM", "Raspberry PI" ]
 +++
 
 If you followed my earlier posts, you know that I’m running a Kubernetes cluster

@@ -3,7 +3,7 @@ date = "2016-05-02T08:55:37+01:00"
 draft = false
 title = "E(F)K cluster on Kubernetes-On-ARM - Part 2"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "Elasticsearch", "Fluentd", "Logstash", "Kibana", "ARM", "Logging"]
-categories = [ "Development", "Kubernetes", "Docker" ]
+categories = [ "Development", "Kubernetes", "Docker", "ARM", "Raspberry PI" ]
 +++
 
 This is the second part in a series about handling logs on Kubernetes-On-ARM.
