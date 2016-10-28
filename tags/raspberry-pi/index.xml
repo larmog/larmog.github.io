@@ -7,8 +7,60 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Tue, 26 Jul 2016 08:48:47 +0200</lastBuildDate>
+    <lastBuildDate>Fri, 28 Oct 2016 05:15:54 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/raspberry-pi/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Installing Kubernetes on ARM with kubeadm</title>
+      <link>http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/</link>
+      <pubDate>Fri, 28 Oct 2016 05:15:54 +0200</pubDate>
+      
+      <guid>http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/</guid>
+      <description>
+
+&lt;p&gt;The tool &lt;code&gt;kubeadm&lt;/code&gt; is an awesome tool for getting started with Kubernetes.
+This short post shows you how to get started on &lt;code&gt;Raspberry Pi 3&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h5 id=&#34;os&#34;&gt;OS&lt;/h5&gt;
+
+&lt;p&gt;I&amp;rsquo;ve used HypriotOS &lt;a href=&#34;http://blog.hypriot.com/post/releasing-HypriotOS-1-0/&#34;&gt;&amp;ldquo;Blackbeard&amp;rdquo;&lt;/a&gt;
+when using &lt;code&gt;Raspberry PI 3&lt;/code&gt; and &lt;a href=&#34;http://oph.mdrjr.net/odrobian/doc/getting-started.html&#34;&gt;Odrobian&lt;/a&gt; for &lt;code&gt;Odroid C2&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;For some reason &lt;code&gt;cgroup=cpuset&lt;/code&gt; wasn&amp;rsquo;t enabled in the kernel for HypriotOS so
+I had to enable it in &lt;code&gt;/boot/cmdline.txt&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;HypriotOS/armv7: root@minion1 in ~
+$ cat /boot/cmdline.txt
++dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 cgroup_enable=cpuset cgroup_enable=memory swapaccount=1 elevator=deadline fsck.repair=yes rootwait console=ttyAMA0,115200 kgdboc=ttyAMA0,115200
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;installing&#34;&gt;Installing&lt;/h5&gt;
+
+&lt;p&gt;The guide &lt;a href=&#34;http://kubernetes.io/docs/getting-started-guides/kubeadm/&#34;&gt;Installing Kubernetes on Linux with kubeadm&lt;/a&gt; shows
+you how to install, if you scroll down to the end of the page (which I didn&amp;rsquo;t
+and wish I had) you can see how to install Kubernetes using &lt;code&gt;kubeadm&lt;/code&gt; for &lt;code&gt;ARM&lt;/code&gt;.
+Thank&amp;rsquo;s to &lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas&lt;/a&gt; I guess.&lt;/p&gt;
+
+&lt;p&gt;Also while reading the official documentation
+for &lt;a href=&#34;http://kubernetes.io/docs/admin/kubeadm/&#34;&gt;kubeadm&lt;/a&gt;, there&amp;rsquo;s
+a &lt;code&gt;kubeadm init&lt;/code&gt; flag &lt;code&gt;--use-kubernetes-version&lt;/code&gt; you should set to
+at least &lt;code&gt;v1.4.3&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h5 id=&#34;using-weave-kube&#34;&gt;Using &lt;code&gt;weave-kube&lt;/code&gt;&lt;/h5&gt;
+
+&lt;p&gt;I didn&amp;rsquo;t read the last part of the guide (or it wasn&amp;rsquo;t present while I read it)
+so I had to do things the hard way (or backwards). The good thing is that
+you can use my &lt;code&gt;ARM&lt;/code&gt; version of &lt;a href=&#34;https://github.com/weaveworks/weave-kube&#34;&gt;weave-kube&lt;/a&gt;
+instead of flannel, for pod networking.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;kubectl create -f https://raw.githubusercontent.com/kodbasen/weave-kube-arm/master/weave-daemonset.yaml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
+
+&lt;p&gt;&lt;code&gt;kubeadm&lt;/code&gt; is awesome :)&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Jenkins on Kubernetes ARM</title>

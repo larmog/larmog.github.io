@@ -3,7 +3,12 @@
   
   <url>
     <loc>http://larmog.github.io/</loc>
-    <lastmod>2016-10-15T20:58:26+02:00</lastmod>
+    <lastmod>2016-10-28T05:15:54+02:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/</loc>
+    <lastmod>2016-10-28T05:15:54+02:00</lastmod>
   </url>
   
   <url>

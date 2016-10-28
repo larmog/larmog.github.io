@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Installing Kubernetes on ARM with kubeadm</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Installing Kubernetes on ARM with kubeadm</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/arm/">ARM</a>
+            
+              <a href="http://larmog.github.io//categories/raspberry-pi/">Raspberry PI</a>
+            
+          
+          </p>
+          <p>
+
+<p>The tool <code>kubeadm</code> is an awesome tool for getting started with Kubernetes.
+This short post shows you how to get started on <code>Raspberry Pi 3</code>.</p>
+
+<h5 id="os">OS</h5>
+
+<p>I&rsquo;ve used HypriotOS <a href="http://blog.hypriot.com/post/releasing-HypriotOS-1-0/">&ldquo;Blackbeard&rdquo;</a>
+when using <code>Raspberry PI 3</code> and <a href="http://oph.mdrjr.net/odrobian/doc/getting-started.html">Odrobian</a> for <code>Odroid C2</code>.</p>
+
+<p>For some reason <code>cgroup=cpuset</code> wasn&rsquo;t enabled in the kernel for HypriotOS so
+I had to enable it in <code>/boot/cmdline.txt</code>.</p>
+
+<pre><code class="language-shell">HypriotOS/armv7: root@minion1 in ~
+$ cat /boot/cmdline.txt
++dwc_otg.lpm_enable=0 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 cgroup_enable=cpuset cgroup_enable=memory swapaccount=1 elevator=deadline fsck.repair=yes rootwait console=ttyAMA0,115200 kgdboc=ttyAMA0,115200
+</code></pre>
+
+<h5 id="installing">Installing</h5>
+
+<p>The guide <a href="http://kubernetes.io/docs/getting-started-guides/kubeadm/">Installing Kubernetes on Linux with kubeadm</a> shows
+you how to install, if you scroll down to the end of the page (which I didn&rsquo;t
+and wish I had) you can see how to install Kubernetes using <code>kubeadm</code> for <code>ARM</code>.
+Thank&rsquo;s to <a href="https://github.com/luxas">Lucas</a> I guess.</p>
+
+<p>Also while reading the official documentation
+for <a href="http://kubernetes.io/docs/admin/kubeadm/">kubeadm</a>, there&rsquo;s
+a <code>kubeadm init</code> flag <code>--use-kubernetes-version</code> you should set to
+at least <code>v1.4.3</code>.</p>
+
+<h5 id="using-weave-kube">Using <code>weave-kube</code></h5>
+
+<p>I didn&rsquo;t read the last part of the guide (or it wasn&rsquo;t present while I read it)
+so I had to do things the hard way (or backwards). The good thing is that
+you can use my <code>ARM</code> version of <a href="https://github.com/weaveworks/weave-kube">weave-kube</a>
+instead of flannel, for pod networking.</p>
+
+<pre><code class="language-shell">kubectl create -f https://raw.githubusercontent.com/kodbasen/weave-kube-arm/master/weave-daemonset.yaml
+</code></pre>
+
+<h5 id="conclusion">Conclusion</h5>
+
+<p><code>kubeadm</code> is awesome :)</p>
+</p>
+          <p>28 Oct 2016
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/raspberry-pi/">#Raspberry PI</a>
+              
+                <a href="http://larmog.github.io//tags/odroid/">#Odroid</a>
+              
+                <a href="http://larmog.github.io//tags/arm/">#ARM</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f&text=Installing%20Kubernetes%20on%20ARM%20with%20kubeadm&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f&title=Installing%20Kubernetes%20on%20ARM%20with%20kubeadm" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f&title=Installing%20Kubernetes%20on%20ARM%20with%20kubeadm" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f&mini=true&title=Installing%20Kubernetes%20on%20ARM%20with%20kubeadm&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Installing%20Kubernetes%20on%20ARM%20with%20kubeadm&body=http%3a%2f%2flarmog.github.io%2f2016%2f10%2f28%2finstalling-kubernetes-on-arm-with-kubeadm%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+
