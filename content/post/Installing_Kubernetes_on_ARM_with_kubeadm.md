@@ -1,6 +1,6 @@
 +++
 date = "2016-10-28T05:15:54+02:00"
-draft = true
+draft = false
 title = "Installing Kubernetes on ARM with kubeadm"
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Raspberry PI", "Odroid", "ARM"]
