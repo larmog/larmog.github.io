@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Fluentd on kodbasen</title>
-    <link>http://larmog.github.io/tags/fluentd/</link>
+    <link>http://larmog.github.io/tags/fluentd/index.xml</link>
     <description>Recent content in Fluentd on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 02 May 2016 08:55:37 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/fluentd/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Mon, 02 May 2016 08:55:37 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/</guid>
-      <description>
-
-&lt;p&gt;This is the second part in a series about handling logs on Kubernetes-On-ARM.
+      <description>&lt;p&gt;This is the second part in a series about handling logs on Kubernetes-On-ARM.
 In the first part we installed ELK and started sending syslog events from our
 nodes using &lt;code&gt;logstash-forwarder&lt;/code&gt;. In this part we will start collecting logs
 from our &lt;code&gt;pods&lt;/code&gt; and Kubernetes components. If you wan&amp;rsquo;t to cache up here&amp;rsquo;s a
@@ -26,7 +23,8 @@ list of previous posts:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/&#34;&gt;ELK cluster on Kubernetes-On-ARM - Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/&#34;&gt;ELK cluster on Kubernetes-On-ARM - Part 1&lt;/a&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;The plan was that this part would be about how
@@ -181,8 +179,7 @@ stacktraces from &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;Java&lt;
 line generates a log message. A single error, written to &lt;code&gt;stderr&lt;/code&gt;, with a
 stacktrace can result in a huge amount of log messages. I leave it up to you to
 filter out unnecessary logs and aggregate and combine multiple rows in to one
-log message. All to minimize the noise.&lt;/p&gt;
-</description>
+log message. All to minimize the noise.&lt;/p&gt;</description>
     </item>
     
   </channel>

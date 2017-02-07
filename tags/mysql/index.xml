@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Mysql on kodbasen</title>
-    <link>http://larmog.github.io/tags/mysql/</link>
+    <link>http://larmog.github.io/tags/mysql/index.xml</link>
     <description>Recent content in Mysql on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 22 Feb 2016 09:35:30 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/mysql/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -17,9 +16,9 @@
       
       <guid>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</guid>
       <description>&lt;p&gt;If you followed my earlier posts, you know that I’m running a Kubernetes cluster
-on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.&lt;/p&gt;
+on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.
 
-&lt;p&gt;If not you can find my earlier posts here:&lt;/p&gt;
+If not you can find my earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
@@ -179,8 +178,7 @@ for trying out techniques, for building microservices.&lt;/p&gt;
 
 &lt;p&gt;By the way, I took the opportunity to overclock my Raspberry Pi:s.
 Thanks to &lt;a href=&#34;http://haydenjames.io/raspberry-pi-2-overclock/&#34;&gt;Hayden James&lt;/a&gt;, all
-cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
-</description>
+cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;</description>
     </item>
     
   </channel>

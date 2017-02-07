@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Traefik on kodbasen</title>
-    <link>http://larmog.github.io/tags/traefik/</link>
+    <link>http://larmog.github.io/tags/traefik/index.xml</link>
     <description>Recent content in Traefik on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sun, 09 Oct 2016 22:00:00 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/traefik/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Sun, 09 Oct 2016 22:00:00 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/</guid>
-      <description>
-
-&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
 &lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Things doesn&amp;rsquo;t always turn out as planned. This is specially true when it comes
@@ -26,7 +23,8 @@ to this series, on how to setup &lt;em&gt;Kubernetes&lt;/em&gt; on &lt;em&gt;Sca
 part 2 would be about setting up an &lt;code&gt;ingress-controller&lt;/code&gt; and securing the
 &lt;code&gt;api-server&lt;/code&gt; and &lt;code&gt;dashboard&lt;/code&gt;. But in the meantime, while I was struggling with
 getting &lt;code&gt;weave&lt;/code&gt; working on &lt;code&gt;ARM&lt;/code&gt; and re-writing my own little project &lt;code&gt;sloop&lt;/code&gt;,
-Kubernetes &lt;code&gt;v1.4.0&lt;/code&gt; was released with the &lt;code&gt;kubeadm&lt;/code&gt; tool.&lt;/p&gt;
+Kubernetes &lt;code&gt;v1.4.0&lt;/code&gt; was released with the &lt;code&gt;kubeadm&lt;/code&gt; tool.
+&lt;/p&gt;
 
 &lt;p&gt;With the tool &lt;code&gt;kubeadm&lt;/code&gt;, you can easily install a secure Kubernetes cluster. It
 makes projects like my own &lt;code&gt;Sloop&lt;/code&gt; unnecessary, and that&amp;rsquo;s a good thing.&lt;/p&gt;
@@ -165,7 +163,7 @@ traefik-lb          100.xx.xxx.xxx   &amp;lt;none&amp;gt;        80/TCP         
 &lt;p&gt;We now have two services &lt;code&gt;kubernetes-dashboard&lt;/code&gt; and &lt;code&gt;traefik-lb&lt;/code&gt;. These are
 the &lt;code&gt;backends&lt;/code&gt; for our &lt;code&gt;traefik&lt;/code&gt; reverse proxy.&lt;/p&gt;
 
-&lt;p&gt;Here&amp;rsquo;s the &lt;code&gt;traefic.toml&lt;/code&gt; file for our proxy:&lt;/p&gt;
+&lt;p&gt;Here&amp;rsquo;s the &lt;code&gt;traefik.toml&lt;/code&gt; file for our proxy:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;logLevel = &amp;quot;DEBUG&amp;quot;
 defaultEntryPoints = [&amp;quot;http&amp;quot;, &amp;quot;https&amp;quot;]
@@ -324,8 +322,7 @@ $ curl -s https://anyapp.mydomain.com.org
 
 &lt;p&gt;We now got a secured Kubernetes cluster that we can use for hosting all our apps
 and services. In the last post in this series we will setup &lt;code&gt;PersistentVolume&lt;/code&gt;:s
-using &lt;em&gt;GlusterFS&lt;/em&gt;.&lt;/p&gt;
-</description>
+using &lt;em&gt;GlusterFS&lt;/em&gt;.&lt;/p&gt;</description>
     </item>
     
   </channel>

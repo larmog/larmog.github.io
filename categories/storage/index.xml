@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Storage on kodbasen</title>
-    <link>http://larmog.github.io/categories/storage/</link>
+    <link>http://larmog.github.io/categories/storage/index.xml</link>
     <description>Recent content in Storage on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 12 May 2016 06:48:19 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/storage/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Thu, 12 May 2016 06:48:19 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/05/12/storage-for-your-cluster/</guid>
-      <description>
-
-&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
+      <description>&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
 biggest problem has been storage. I&amp;rsquo;m using Elasticserach for storing logs and
 the cluster generates 1.4 million entries per day (i know, need to do
 something about it).
@@ -41,7 +38,8 @@ something about it).
 
 
 If you want to deploy your applications to Kubernetes, sooner or later you need
-to think about how to solve storage and persistence.&lt;/p&gt;
+to think about how to solve storage and persistence.
+&lt;/p&gt;
 
 &lt;p&gt;Kubernetes is a distributed cluster where nodes and pods comes and goes. We
 don&amp;rsquo;t want to solve our persistence problem for a single node, we want to solve
@@ -118,8 +116,7 @@ then you need to think about how to solve persistence.&lt;/p&gt;
 problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
 
 &lt;p&gt;Maybe it&amp;rsquo;s time to build
-&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;
-</description>
+&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;</description>
     </item>
     
   </channel>

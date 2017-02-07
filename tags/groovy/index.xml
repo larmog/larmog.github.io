@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Groovy on kodbasen</title>
-    <link>http://larmog.github.io/tags/groovy/</link>
+    <link>http://larmog.github.io/tags/groovy/index.xml</link>
     <description>Recent content in Groovy on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 18 Aug 2014 21:37:45 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/groovy/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -20,6 +19,8 @@
 classes. The most obvious solution was to implement &lt;code&gt;GroovyInterceptable&lt;/code&gt; but I wanted a
 less intrusive solution. After a bit of googling I&amp;rsquo;ve stumbled across
 &lt;code&gt;DelegatingMetaClass&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
 
 &lt;p&gt;Here is a simple interceptor that works like a around advice. It only logs all method
 calls for a class.&lt;/p&gt;
@@ -111,8 +112,7 @@ after the mixin:&lt;/p&gt;
 	after: Person.dance, return value:null &amp;lt;--
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;As we can see in the example above the &lt;code&gt;println&lt;/code&gt;-method is part of the Groovy object.&lt;/p&gt;
-</description>
+&lt;p&gt;As we can see in the example above the &lt;code&gt;println&lt;/code&gt;-method is part of the Groovy object.&lt;/p&gt;</description>
     </item>
     
   </channel>

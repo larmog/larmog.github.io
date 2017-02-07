@@ -102,8 +102,8 @@ something about it).
 
 
 If you want to deploy your applications to Kubernetes, sooner or later you need
-to think about how to solve storage and persistence.</p>
-</p>
+to think about how to solve storage and persistence.
+</p></p>
       <p>
       12 May 2016
       
@@ -163,9 +163,14 @@ list of previous posts:</p>
 
 <ul>
 <li><a href="/2016/02/06/kubernetes-on-arm/">Kubernetes-On-ARM</a></li>
-<li><a href="/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/">ELK cluster on Kubernetes-On-ARM - Part 1</a></li>
+<li><a href="/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/">ELK cluster on Kubernetes-On-ARM - Part 1</a>
+</li>
 </ul>
-</p>
+
+<p>The plan was that this part would be about how
+to start collecting logs from Kubernetes. But I wasn&rsquo;t satisfied with how
+<code>logstash-forwarder</code> worked. The thing is that, once the <code>logstash-forwarder</code>
+daemon is started, the node can&rsquo;t run much else.</p></p>
       <p>
       2 May 2016
       
@@ -225,8 +230,8 @@ list of previous posts:</p>
 whats going on. Using tools like <code>kubectl logs</code> or <code>docker logs</code> is fine if you
 run one or two nodes, but it soon gets impossible to get an overview of whats
 going on, and you need to be able to view, query and monitor your logs from one
-central place.</p>
-</p>
+central place.
+</p></p>
       <p>
       13 Mar 2016
       

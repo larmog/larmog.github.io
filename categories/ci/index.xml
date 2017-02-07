@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Ci on kodbasen</title>
-    <link>http://larmog.github.io/categories/ci/</link>
+    <link>http://larmog.github.io/categories/ci/index.xml</link>
     <description>Recent content in Ci on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Mon, 08 Feb 2016 16:39:34 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/ci/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Mon, 08 Feb 2016 16:39:34 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-3/</guid>
-      <description>
-
-&lt;p&gt;This is the third part in a series on setting up Gogs and Drone on
+      <description>&lt;p&gt;This is the third part in a series on setting up Gogs and Drone on
 Kubernetes-ARM. You can find the earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
@@ -28,7 +25,8 @@ Kubernetes-ARM. You can find the earlier posts here:&lt;/p&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
-A disclaimer, I&amp;rsquo;m new to Drone and out on deep water so&amp;hellip;&lt;/p&gt;
+A disclaimer, I&amp;rsquo;m new to Drone and out on deep water so&amp;hellip;
+&lt;/p&gt;
 
 &lt;p&gt;If your wondering about Drone take a look at
 &lt;a href=&#34;https://github.com/drone/drone&#34;&gt;GitHub page&lt;/a&gt;.&lt;/p&gt;
@@ -287,8 +285,7 @@ something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some 
 &lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&#34;&gt;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/conf2kube&#34;&gt;https://github.com/kelseyhightower/conf2kube&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/drone-demos&#34;&gt;https://github.com/drone-demos&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
+&lt;/ul&gt;</description>
     </item>
     
   </channel>

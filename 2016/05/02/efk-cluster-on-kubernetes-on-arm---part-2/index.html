@@ -78,9 +78,7 @@
             
           
           </p>
-          <p>
-
-<p>This is the second part in a series about handling logs on Kubernetes-On-ARM.
+          <p><p>This is the second part in a series about handling logs on Kubernetes-On-ARM.
 In the first part we installed ELK and started sending syslog events from our
 nodes using <code>logstash-forwarder</code>. In this part we will start collecting logs
 from our <code>pods</code> and Kubernetes components. If you wan&rsquo;t to cache up here&rsquo;s a
@@ -88,7 +86,8 @@ list of previous posts:</p>
 
 <ul>
 <li><a href="/2016/02/06/kubernetes-on-arm/">Kubernetes-On-ARM</a></li>
-<li><a href="/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/">ELK cluster on Kubernetes-On-ARM - Part 1</a></li>
+<li><a href="/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/">ELK cluster on Kubernetes-On-ARM - Part 1</a>
+</li>
 </ul>
 
 <p>The plan was that this part would be about how
@@ -243,8 +242,7 @@ stacktraces from <code>elasticsearch</code> and <code>Java</code> that is writte
 line generates a log message. A single error, written to <code>stderr</code>, with a
 stacktrace can result in a huge amount of log messages. I leave it up to you to
 filter out unnecessary logs and aggregate and combine multiple rows in to one
-log message. All to minimize the noise.</p>
-</p>
+log message. All to minimize the noise.</p></p>
           <p>2 May 2016
             
               

@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Amd64 on kodbasen</title>
-    <link>http://larmog.github.io/tags/amd64/</link>
+    <link>http://larmog.github.io/tags/amd64/index.xml</link>
     <description>Recent content in Amd64 on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Wed, 17 Aug 2016 20:48:11 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/amd64/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,13 +15,12 @@
       <pubDate>Wed, 17 Aug 2016 20:48:11 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</guid>
-      <description>
-
-&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
 &lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;This post is the first in a series on setting up Kubernetes using the bare-metal cloud provider Scaleway. Scaleway offers bare-metal servers both for ARM and x86-64. I will show how to
-set up Kubernetes on ARM using the Scaleway C1 server.&lt;/p&gt;
+set up Kubernetes on ARM using the Scaleway C1 server.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;disclaimer&#34;&gt;Disclaimer&lt;/h5&gt;
 
@@ -143,8 +141,7 @@ NAME          STATUS    AGE
 
 &lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
-&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;
-</description>
+&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -154,7 +151,8 @@ NAME          STATUS    AGE
       
       <guid>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</guid>
       <description>&lt;p&gt;With the release of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; there is now a cross platform way of
-quickly setting up a Kubernetes cluster using Docker.&lt;/p&gt;
+quickly setting up a Kubernetes cluster using Docker.
+&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;kube-deploy/docker-multinode&lt;/a&gt;
 uses two instances of Docker daemon.&lt;/p&gt;
@@ -165,8 +163,7 @@ the kubelet &lt;em&gt;native&lt;/em&gt;. The reason for running your &lt;code&gt
 &lt;p&gt;Sloop uses the best of two worlds. Docker for bootstrapping your cluster and &lt;em&gt;native&lt;/em&gt; kubelet for full Kubernetes functionality.&lt;/p&gt;
 
 &lt;p&gt;Give it a try and see what you think!
-&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;
-</description>
+&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;</description>
     </item>
     
   </channel>

@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Glusterfs on kodbasen</title>
-    <link>http://larmog.github.io/tags/glusterfs/</link>
+    <link>http://larmog.github.io/tags/glusterfs/index.xml</link>
     <description>Recent content in Glusterfs on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sat, 15 Oct 2016 20:58:26 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/glusterfs/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Sat, 15 Oct 2016 20:58:26 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/</guid>
-      <description>
-
-&lt;p&gt;This is the final part in a series about setting up Kubernetes on &lt;em&gt;Scaleway&lt;/em&gt;.
+      <description>&lt;p&gt;This is the final part in a series about setting up Kubernetes on &lt;em&gt;Scaleway&lt;/em&gt;.
 This final part is about setting up storage for your cluster.
 &lt;img src=&#34;http://larmog.github.io/media/k8s-glusterfs-scaleway.png&#34; style=&#34;float:right;height:150px&#34;&gt;
 Most of the steps here is already described in an earlier post:
@@ -28,7 +25,8 @@ series here:
 &lt;a href=&#34;http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/&#34;&gt;&lt;em&gt;Part 1&lt;/em&gt;&lt;/a&gt;
 and &lt;a href=&#34;http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/&#34;&gt;&lt;em&gt;Part 1 (revisited) and Part 2&lt;/em&gt;&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p style=&#34;margin-bottom:40px&#34;&gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;p style=&#34;margin-bottom:40px&#34;&gt;&lt;/p&gt;&lt;/p&gt;
 
 &lt;p&gt;The solution described here is not the only way you can use to set up &lt;em&gt;GlusterFS&lt;/em&gt;
 for your cluster. You can also use a &lt;code&gt;DaemonSet&lt;/code&gt; or a &lt;code&gt;PetSet&lt;/code&gt; and run your
@@ -251,8 +249,7 @@ you can always replace it with &lt;code&gt;nginx&lt;/code&gt;. To protect your &
 and save some IP-adresses, you can remove the public IP:s from your servers.
 But remember you need to assign one, if you want to upgrade the server.&lt;/p&gt;
 
-&lt;p&gt;As always, feedback is very welcome.&lt;/p&gt;
-</description>
+&lt;p&gt;As always, feedback is very welcome.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -261,9 +258,7 @@ But remember you need to assign one, if you want to upgrade the server.&lt;/p&gt
       <pubDate>Thu, 12 May 2016 06:48:19 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/05/12/storage-for-your-cluster/</guid>
-      <description>
-
-&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
+      <description>&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
 biggest problem has been storage. I&amp;rsquo;m using Elasticserach for storing logs and
 the cluster generates 1.4 million entries per day (i know, need to do
 something about it).
@@ -286,7 +281,8 @@ something about it).
 
 
 If you want to deploy your applications to Kubernetes, sooner or later you need
-to think about how to solve storage and persistence.&lt;/p&gt;
+to think about how to solve storage and persistence.
+&lt;/p&gt;
 
 &lt;p&gt;Kubernetes is a distributed cluster where nodes and pods comes and goes. We
 don&amp;rsquo;t want to solve our persistence problem for a single node, we want to solve
@@ -363,8 +359,7 @@ then you need to think about how to solve persistence.&lt;/p&gt;
 problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
 
 &lt;p&gt;Maybe it&amp;rsquo;s time to build
-&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;
-</description>
+&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -373,16 +368,15 @@ problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
       <pubDate>Thu, 03 Mar 2016 09:12:49 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/03/03/nothing-for-the-faint-hearted/</guid>
-      <description>
-
-&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
+      <description>&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
 try to summarize my experiences. If you followed my earlier posts, then you know
 that I&amp;rsquo;m running &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs&lt;/a&gt; and
 &lt;a href=&#34;https://github.com/drone&#34;&gt;Drone&lt;/a&gt; on a Kubernetes cluster with
 &lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; for storing. I’m using &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;
 on &lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;HypriotOS&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;In this post I will try to summarize my experiences so far.&lt;/p&gt;
+&lt;p&gt;In this post I will try to summarize my experiences so far.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
 
@@ -487,8 +481,7 @@ a near future. I’m still very pleased with the cluster and it’s a great
 environment for building &lt;em&gt;microservices&lt;/em&gt; and validating your system
 architecture. For instance, it’s not possible to build a big monolith.
 If your system runs and scales on Kubernetes-On-ARM (built on Raspberry Pi)
-then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
-</description>
+then you can be sure of that it runs and scales on any platform.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -498,9 +491,9 @@ then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
       
       <guid>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</guid>
       <description>&lt;p&gt;If you followed my earlier posts, you know that I’m running a Kubernetes cluster
-on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.&lt;/p&gt;
+on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.
 
-&lt;p&gt;If not you can find my earlier posts here:&lt;/p&gt;
+If not you can find my earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
@@ -660,8 +653,7 @@ for trying out techniques, for building microservices.&lt;/p&gt;
 
 &lt;p&gt;By the way, I took the opportunity to overclock my Raspberry Pi:s.
 Thanks to &lt;a href=&#34;http://haydenjames.io/raspberry-pi-2-overclock/&#34;&gt;Hayden James&lt;/a&gt;, all
-cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
-</description>
+cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;</description>
     </item>
     
   </channel>

@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Ci/Cd on kodbasen</title>
-    <link>http://larmog.github.io/categories/ci/cd/</link>
+    <link>http://larmog.github.io/categories/ci/cd/index.xml</link>
     <description>Recent content in Ci/Cd on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Tue, 26 Jul 2016 08:48:47 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/ci/cd/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,14 +15,13 @@
       <pubDate>Tue, 26 Jul 2016 08:48:47 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/07/26/jenkins-on-kubernetes-arm/</guid>
-      <description>
-
-&lt;p&gt;&lt;img src=&#34;https://www.arm.com/assets/images/ARM_Logo_Black.png&#34; height=&#34;80&#34;&gt;
+      <description>&lt;p&gt;&lt;img src=&#34;https://www.arm.com/assets/images/ARM_Logo_Black.png&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://secure.gravatar.com/avatar/26da7b36ff8bb5db4211400358dc7c4e.jpg&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png&#34; height=&#34;80&#34;&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;a href=&#34;https://jenkins.io/&#34;&gt;Jenkins&lt;/a&gt; is a tool for &lt;em&gt;Continuous Integration and Continuous Delivery&lt;/em&gt; and has a plugin for provisioning builds (slaves) cross a Kubernetes cluster.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://jenkins.io/&#34;&gt;Jenkins&lt;/a&gt; is a tool for &lt;em&gt;Continuous Integration and Continuous Delivery&lt;/em&gt; and has a plugin for provisioning builds (slaves) cross a Kubernetes cluster.
+&lt;/p&gt;
 
 &lt;p&gt;The plugin kicks off every build in a new &lt;code&gt;pod&lt;/code&gt; and tears it down when the build is complete. This means that every build is clean and reproducible. This is clearly something that we want in &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt;.&lt;/p&gt;
 
@@ -205,8 +203,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;p&gt;I&amp;rsquo;ve started moving all my builds from Drone over to Jenkins. If you decide to give Jenkins a try, and you&amp;rsquo;re using &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt;, let me know how it goes.&lt;/p&gt;
 
-&lt;p&gt;I hope you picked up something new, and that it was worth while reading this post.&lt;/p&gt;
-</description>
+&lt;p&gt;I hope you picked up something new, and that it was worth while reading this post.&lt;/p&gt;</description>
     </item>
     
   </channel>

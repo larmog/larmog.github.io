@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Arm on kodbasen</title>
-    <link>http://larmog.github.io/tags/arm/</link>
+    <link>http://larmog.github.io/tags/arm/index.xml</link>
     <description>Recent content in Arm on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Fri, 28 Oct 2016 05:15:54 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/arm/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,10 +15,9 @@
       <pubDate>Fri, 28 Oct 2016 05:15:54 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/</guid>
-      <description>
-
-&lt;p&gt;The tool &lt;code&gt;kubeadm&lt;/code&gt; is an awesome tool for getting started with Kubernetes.
-This short post shows you how to get started on &lt;code&gt;Raspberry Pi 3&lt;/code&gt;.&lt;/p&gt;
+      <description>&lt;p&gt;The tool &lt;code&gt;kubeadm&lt;/code&gt; is an awesome tool for getting started with Kubernetes.
+This short post shows you how to get started on &lt;code&gt;Raspberry Pi 3&lt;/code&gt;.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;os&#34;&gt;OS&lt;/h5&gt;
 
@@ -58,8 +56,7 @@ instead of flannel, for pod networking.&lt;/p&gt;
 
 &lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
-&lt;p&gt;&lt;code&gt;kubeadm&lt;/code&gt; is awesome :)&lt;/p&gt;
-</description>
+&lt;p&gt;&lt;code&gt;kubeadm&lt;/code&gt; is awesome :)&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -68,13 +65,12 @@ instead of flannel, for pod networking.&lt;/p&gt;
       <pubDate>Wed, 17 Aug 2016 20:48:11 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/</guid>
-      <description>
-
-&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
 &lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;This post is the first in a series on setting up Kubernetes using the bare-metal cloud provider Scaleway. Scaleway offers bare-metal servers both for ARM and x86-64. I will show how to
-set up Kubernetes on ARM using the Scaleway C1 server.&lt;/p&gt;
+set up Kubernetes on ARM using the Scaleway C1 server.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;disclaimer&#34;&gt;Disclaimer&lt;/h5&gt;
 
@@ -195,8 +191,7 @@ NAME          STATUS    AGE
 
 &lt;h5 id=&#34;conclusion&#34;&gt;Conclusion&lt;/h5&gt;
 
-&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;
-</description>
+&lt;p&gt;We now have 2 nodes running Kubernetes on &lt;strong&gt;ARM&lt;/strong&gt;. In the next post in this series i hope to show how to setup an &lt;code&gt;ingress-controller&lt;/code&gt; with certificates and how to secure your api-server.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -205,14 +200,13 @@ NAME          STATUS    AGE
       <pubDate>Tue, 26 Jul 2016 08:48:47 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/07/26/jenkins-on-kubernetes-arm/</guid>
-      <description>
-
-&lt;p&gt;&lt;img src=&#34;https://www.arm.com/assets/images/ARM_Logo_Black.png&#34; height=&#34;80&#34;&gt;
+      <description>&lt;p&gt;&lt;img src=&#34;https://www.arm.com/assets/images/ARM_Logo_Black.png&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://secure.gravatar.com/avatar/26da7b36ff8bb5db4211400358dc7c4e.jpg&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://raw.githubusercontent.com/kubernetes/kubernetes/master/logo/logo.png&#34; height=&#34;80&#34;&gt;
 &lt;img src=&#34;https://wiki.jenkins-ci.org/download/attachments/2916393/headshot.png&#34; height=&#34;80&#34;&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;a href=&#34;https://jenkins.io/&#34;&gt;Jenkins&lt;/a&gt; is a tool for &lt;em&gt;Continuous Integration and Continuous Delivery&lt;/em&gt; and has a plugin for provisioning builds (slaves) cross a Kubernetes cluster.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://jenkins.io/&#34;&gt;Jenkins&lt;/a&gt; is a tool for &lt;em&gt;Continuous Integration and Continuous Delivery&lt;/em&gt; and has a plugin for provisioning builds (slaves) cross a Kubernetes cluster.
+&lt;/p&gt;
 
 &lt;p&gt;The plugin kicks off every build in a new &lt;code&gt;pod&lt;/code&gt; and tears it down when the build is complete. This means that every build is clean and reproducible. This is clearly something that we want in &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt;.&lt;/p&gt;
 
@@ -394,8 +388,7 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
 
 &lt;p&gt;I&amp;rsquo;ve started moving all my builds from Drone over to Jenkins. If you decide to give Jenkins a try, and you&amp;rsquo;re using &lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;Sloop&lt;/a&gt;, let me know how it goes.&lt;/p&gt;
 
-&lt;p&gt;I hope you picked up something new, and that it was worth while reading this post.&lt;/p&gt;
-</description>
+&lt;p&gt;I hope you picked up something new, and that it was worth while reading this post.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -405,7 +398,8 @@ work you need to mount three &lt;code&gt;hostPath&lt;/code&gt; volumes:
       
       <guid>http://larmog.github.io/2016/07/14/building-your-kubernetes-cluster-in-minutes/</guid>
       <description>&lt;p&gt;With the release of Kubernetes &lt;code&gt;v1.3.0&lt;/code&gt; there is now a cross platform way of
-quickly setting up a Kubernetes cluster using Docker.&lt;/p&gt;
+quickly setting up a Kubernetes cluster using Docker.
+&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://github.com/kubernetes/kube-deploy/tree/master/docker-multinode&#34;&gt;kube-deploy/docker-multinode&lt;/a&gt;
 uses two instances of Docker daemon.&lt;/p&gt;
@@ -416,8 +410,7 @@ the kubelet &lt;em&gt;native&lt;/em&gt;. The reason for running your &lt;code&gt
 &lt;p&gt;Sloop uses the best of two worlds. Docker for bootstrapping your cluster and &lt;em&gt;native&lt;/em&gt; kubelet for full Kubernetes functionality.&lt;/p&gt;
 
 &lt;p&gt;Give it a try and see what you think!
-&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;
-</description>
+&lt;a href=&#34;https://github.com/kodbasen/sloop&#34;&gt;https://github.com/kodbasen/sloop&lt;/a&gt;&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -426,13 +419,12 @@ the kubelet &lt;em&gt;native&lt;/em&gt;. The reason for running your &lt;code&gt
       <pubDate>Thu, 19 May 2016 13:29:40 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/05/19/ingress-resources-the-final-piece-of-the-puzzle/</guid>
-      <description>
-
-&lt;p&gt;I&amp;rsquo;ve been using service-loadbalancer in my cluster and annotated my services to
+      <description>&lt;p&gt;I&amp;rsquo;ve been using service-loadbalancer in my cluster and annotated my services to
 make them available outside the cluster network. With the release of Kubernetes
 1.2 there is another alternative, the Ingress Resources.&lt;/p&gt;
 
-&lt;p&gt;You can read more about the Ingress resource in the &lt;a href=&#34;http://kubernetes.io/docs/user-guide/ingress/&#34;&gt;Kubernetes Reference Documentation&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;You can read more about the Ingress resource in the &lt;a href=&#34;http://kubernetes.io/docs/user-guide/ingress/&#34;&gt;Kubernetes Reference Documentation&lt;/a&gt;.
+&lt;/p&gt;
 
 &lt;p&gt;I&amp;rsquo;ve always felt that there&amp;rsquo;s been something missing in Kubernetes when it comes
 to exposing services. There has been multiple ways of doing it, and it&amp;rsquo;s
@@ -483,8 +475,7 @@ you can use mine. I&amp;rsquo;ve built the same image chain as the
 &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;&lt;code&gt;Kubernetes-On-ARM&lt;/code&gt;&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;Ingress Resources is maybe the final piece of the puzzle, to make Kubernetes
-totally awesome. What do you think?&lt;/p&gt;
-</description>
+totally awesome. What do you think?&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -493,9 +484,7 @@ totally awesome. What do you think?&lt;/p&gt;
       <pubDate>Thu, 12 May 2016 06:48:19 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/05/12/storage-for-your-cluster/</guid>
-      <description>
-
-&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
+      <description>&lt;p&gt;I&amp;rsquo;ve been working on getting Elasticsearch working on Kubernetes-On-ARM. The
 biggest problem has been storage. I&amp;rsquo;m using Elasticserach for storing logs and
 the cluster generates 1.4 million entries per day (i know, need to do
 something about it).
@@ -518,7 +507,8 @@ something about it).
 
 
 If you want to deploy your applications to Kubernetes, sooner or later you need
-to think about how to solve storage and persistence.&lt;/p&gt;
+to think about how to solve storage and persistence.
+&lt;/p&gt;
 
 &lt;p&gt;Kubernetes is a distributed cluster where nodes and pods comes and goes. We
 don&amp;rsquo;t want to solve our persistence problem for a single node, we want to solve
@@ -595,8 +585,7 @@ then you need to think about how to solve persistence.&lt;/p&gt;
 problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
 
 &lt;p&gt;Maybe it&amp;rsquo;s time to build
-&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;
-</description>
+&lt;code&gt;Kodbasen cluster version 2&lt;/code&gt;?&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -605,9 +594,7 @@ problem is that my NAS is almost full, and not so portable.&lt;/p&gt;
       <pubDate>Mon, 02 May 2016 08:55:37 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/05/02/efk-cluster-on-kubernetes-on-arm---part-2/</guid>
-      <description>
-
-&lt;p&gt;This is the second part in a series about handling logs on Kubernetes-On-ARM.
+      <description>&lt;p&gt;This is the second part in a series about handling logs on Kubernetes-On-ARM.
 In the first part we installed ELK and started sending syslog events from our
 nodes using &lt;code&gt;logstash-forwarder&lt;/code&gt;. In this part we will start collecting logs
 from our &lt;code&gt;pods&lt;/code&gt; and Kubernetes components. If you wan&amp;rsquo;t to cache up here&amp;rsquo;s a
@@ -615,7 +602,8 @@ list of previous posts:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/&#34;&gt;ELK cluster on Kubernetes-On-ARM - Part 1&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/&#34;&gt;ELK cluster on Kubernetes-On-ARM - Part 1&lt;/a&gt;
+&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;The plan was that this part would be about how
@@ -770,8 +758,7 @@ stacktraces from &lt;code&gt;elasticsearch&lt;/code&gt; and &lt;code&gt;Java&lt;
 line generates a log message. A single error, written to &lt;code&gt;stderr&lt;/code&gt;, with a
 stacktrace can result in a huge amount of log messages. I leave it up to you to
 filter out unnecessary logs and aggregate and combine multiple rows in to one
-log message. All to minimize the noise.&lt;/p&gt;
-</description>
+log message. All to minimize the noise.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -780,13 +767,12 @@ log message. All to minimize the noise.&lt;/p&gt;
       <pubDate>Sun, 13 Mar 2016 22:44:21 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/03/13/elk-cluster-on-kubernetes-on-arm---part-1/</guid>
-      <description>
-
-&lt;p&gt;One of the most important parts of running a cluster is to gain knowledge of
+      <description>&lt;p&gt;One of the most important parts of running a cluster is to gain knowledge of
 whats going on. Using tools like &lt;code&gt;kubectl logs&lt;/code&gt; or &lt;code&gt;docker logs&lt;/code&gt; is fine if you
 run one or two nodes, but it soon gets impossible to get an overview of whats
 going on, and you need to be able to view, query and monitor your logs from one
-central place.&lt;/p&gt;
+central place.
+&lt;/p&gt;
 
 &lt;p&gt;This blog post is about setting up
 &lt;em&gt;Elasticsearch + Logstash + Kibana ELK on Kubernetes-On-ARM&lt;/em&gt;. You could question
@@ -1127,8 +1113,7 @@ Java image on &lt;code&gt;armhf&lt;/code&gt;.&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/elastic/logstash/issues/1729&#34;&gt;https://github.com/elastic/logstash/issues/1729&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/vaijab/logstash-filter-kubernetes&#34;&gt;https://github.com/vaijab/logstash-filter-kubernetes&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://www.fluentd.org&#34;&gt;http://www.fluentd.org&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
+&lt;/ul&gt;</description>
     </item>
     
     <item>
@@ -1137,16 +1122,15 @@ Java image on &lt;code&gt;armhf&lt;/code&gt;.&lt;/li&gt;
       <pubDate>Thu, 03 Mar 2016 09:12:49 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/03/03/nothing-for-the-faint-hearted/</guid>
-      <description>
-
-&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
+      <description>&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
 try to summarize my experiences. If you followed my earlier posts, then you know
 that I&amp;rsquo;m running &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs&lt;/a&gt; and
 &lt;a href=&#34;https://github.com/drone&#34;&gt;Drone&lt;/a&gt; on a Kubernetes cluster with
 &lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; for storing. I’m using &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;
 on &lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;HypriotOS&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;In this post I will try to summarize my experiences so far.&lt;/p&gt;
+&lt;p&gt;In this post I will try to summarize my experiences so far.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
 
@@ -1251,8 +1235,7 @@ a near future. I’m still very pleased with the cluster and it’s a great
 environment for building &lt;em&gt;microservices&lt;/em&gt; and validating your system
 architecture. For instance, it’s not possible to build a big monolith.
 If your system runs and scales on Kubernetes-On-ARM (built on Raspberry Pi)
-then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
-</description>
+then you can be sure of that it runs and scales on any platform.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -1262,9 +1245,9 @@ then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
       
       <guid>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</guid>
       <description>&lt;p&gt;If you followed my earlier posts, you know that I’m running a Kubernetes cluster
-on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.&lt;/p&gt;
+on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.
 
-&lt;p&gt;If not you can find my earlier posts here:&lt;/p&gt;
+If not you can find my earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
@@ -1424,8 +1407,7 @@ for trying out techniques, for building microservices.&lt;/p&gt;
 
 &lt;p&gt;By the way, I took the opportunity to overclock my Raspberry Pi:s.
 Thanks to &lt;a href=&#34;http://haydenjames.io/raspberry-pi-2-overclock/&#34;&gt;Hayden James&lt;/a&gt;, all
-cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
-</description>
+cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;</description>
     </item>
     
   </channel>

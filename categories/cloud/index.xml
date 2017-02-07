@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Cloud on kodbasen</title>
-    <link>http://larmog.github.io/categories/cloud/</link>
+    <link>http://larmog.github.io/categories/cloud/index.xml</link>
     <description>Recent content in Cloud on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Sat, 15 Oct 2016 20:58:26 +0200</lastBuildDate>
     <atom:link href="http://larmog.github.io/categories/cloud/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,9 +15,7 @@
       <pubDate>Sat, 15 Oct 2016 20:58:26 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/</guid>
-      <description>
-
-&lt;p&gt;This is the final part in a series about setting up Kubernetes on &lt;em&gt;Scaleway&lt;/em&gt;.
+      <description>&lt;p&gt;This is the final part in a series about setting up Kubernetes on &lt;em&gt;Scaleway&lt;/em&gt;.
 This final part is about setting up storage for your cluster.
 &lt;img src=&#34;http://larmog.github.io/media/k8s-glusterfs-scaleway.png&#34; style=&#34;float:right;height:150px&#34;&gt;
 Most of the steps here is already described in an earlier post:
@@ -28,7 +25,8 @@ series here:
 &lt;a href=&#34;http://larmog.github.io/2016/08/17/setting-up-kubernetes-on-scaleway---part-1/&#34;&gt;&lt;em&gt;Part 1&lt;/em&gt;&lt;/a&gt;
 and &lt;a href=&#34;http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/&#34;&gt;&lt;em&gt;Part 1 (revisited) and Part 2&lt;/em&gt;&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p style=&#34;margin-bottom:40px&#34;&gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;p style=&#34;margin-bottom:40px&#34;&gt;&lt;/p&gt;&lt;/p&gt;
 
 &lt;p&gt;The solution described here is not the only way you can use to set up &lt;em&gt;GlusterFS&lt;/em&gt;
 for your cluster. You can also use a &lt;code&gt;DaemonSet&lt;/code&gt; or a &lt;code&gt;PetSet&lt;/code&gt; and run your
@@ -251,8 +249,7 @@ you can always replace it with &lt;code&gt;nginx&lt;/code&gt;. To protect your &
 and save some IP-adresses, you can remove the public IP:s from your servers.
 But remember you need to assign one, if you want to upgrade the server.&lt;/p&gt;
 
-&lt;p&gt;As always, feedback is very welcome.&lt;/p&gt;
-</description>
+&lt;p&gt;As always, feedback is very welcome.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -261,9 +258,7 @@ But remember you need to assign one, if you want to upgrade the server.&lt;/p&gt
       <pubDate>Sun, 09 Oct 2016 22:00:00 +0200</pubDate>
       
       <guid>http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/</guid>
-      <description>
-
-&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
+      <description>&lt;p&gt;&lt;a href=&#34;http://scaleway.com&#34;&gt;
 &lt;img src=&#34;https://www.scaleway.com/img/scaleway.f0e4.svg&#34; style=&#34;float:right;height:80px&#34;&gt;&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;Things doesn&amp;rsquo;t always turn out as planned. This is specially true when it comes
@@ -271,7 +266,8 @@ to this series, on how to setup &lt;em&gt;Kubernetes&lt;/em&gt; on &lt;em&gt;Sca
 part 2 would be about setting up an &lt;code&gt;ingress-controller&lt;/code&gt; and securing the
 &lt;code&gt;api-server&lt;/code&gt; and &lt;code&gt;dashboard&lt;/code&gt;. But in the meantime, while I was struggling with
 getting &lt;code&gt;weave&lt;/code&gt; working on &lt;code&gt;ARM&lt;/code&gt; and re-writing my own little project &lt;code&gt;sloop&lt;/code&gt;,
-Kubernetes &lt;code&gt;v1.4.0&lt;/code&gt; was released with the &lt;code&gt;kubeadm&lt;/code&gt; tool.&lt;/p&gt;
+Kubernetes &lt;code&gt;v1.4.0&lt;/code&gt; was released with the &lt;code&gt;kubeadm&lt;/code&gt; tool.
+&lt;/p&gt;
 
 &lt;p&gt;With the tool &lt;code&gt;kubeadm&lt;/code&gt;, you can easily install a secure Kubernetes cluster. It
 makes projects like my own &lt;code&gt;Sloop&lt;/code&gt; unnecessary, and that&amp;rsquo;s a good thing.&lt;/p&gt;
@@ -410,7 +406,7 @@ traefik-lb          100.xx.xxx.xxx   &amp;lt;none&amp;gt;        80/TCP         
 &lt;p&gt;We now have two services &lt;code&gt;kubernetes-dashboard&lt;/code&gt; and &lt;code&gt;traefik-lb&lt;/code&gt;. These are
 the &lt;code&gt;backends&lt;/code&gt; for our &lt;code&gt;traefik&lt;/code&gt; reverse proxy.&lt;/p&gt;
 
-&lt;p&gt;Here&amp;rsquo;s the &lt;code&gt;traefic.toml&lt;/code&gt; file for our proxy:&lt;/p&gt;
+&lt;p&gt;Here&amp;rsquo;s the &lt;code&gt;traefik.toml&lt;/code&gt; file for our proxy:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;logLevel = &amp;quot;DEBUG&amp;quot;
 defaultEntryPoints = [&amp;quot;http&amp;quot;, &amp;quot;https&amp;quot;]
@@ -569,8 +565,7 @@ $ curl -s https://anyapp.mydomain.com.org
 
 &lt;p&gt;We now got a secured Kubernetes cluster that we can use for hosting all our apps
 and services. In the last post in this series we will setup &lt;code&gt;PersistentVolume&lt;/code&gt;:s
-using &lt;em&gt;GlusterFS&lt;/em&gt;.&lt;/p&gt;
-</description>
+using &lt;em&gt;GlusterFS&lt;/em&gt;.&lt;/p&gt;</description>
     </item>
     
   </channel>

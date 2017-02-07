@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Gogs on kodbasen</title>
-    <link>http://larmog.github.io/tags/gogs/</link>
+    <link>http://larmog.github.io/tags/gogs/index.xml</link>
     <description>Recent content in Gogs on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 03 Mar 2016 09:12:49 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/gogs/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -16,16 +15,15 @@
       <pubDate>Thu, 03 Mar 2016 09:12:49 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/03/03/nothing-for-the-faint-hearted/</guid>
-      <description>
-
-&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
+      <description>&lt;p&gt;I’ve been running my &lt;em&gt;Kubernetes-On-ARM&lt;/em&gt; cluster a couple of weeks now and I’ll
 try to summarize my experiences. If you followed my earlier posts, then you know
 that I&amp;rsquo;m running &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs&lt;/a&gt; and
 &lt;a href=&#34;https://github.com/drone&#34;&gt;Drone&lt;/a&gt; on a Kubernetes cluster with
 &lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; for storing. I’m using &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;
 on &lt;a href=&#34;http://blog.hypriot.com/&#34;&gt;HypriotOS&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;In this post I will try to summarize my experiences so far.&lt;/p&gt;
+&lt;p&gt;In this post I will try to summarize my experiences so far.
+&lt;/p&gt;
 
 &lt;h5 id=&#34;dind-and-kubelet-does-not-play-well-together&#34;&gt;Dind and Kubelet does not play well together&lt;/h5&gt;
 
@@ -130,8 +128,7 @@ a near future. I’m still very pleased with the cluster and it’s a great
 environment for building &lt;em&gt;microservices&lt;/em&gt; and validating your system
 architecture. For instance, it’s not possible to build a big monolith.
 If your system runs and scales on Kubernetes-On-ARM (built on Raspberry Pi)
-then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
-</description>
+then you can be sure of that it runs and scales on any platform.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -141,9 +138,9 @@ then you can be sure of that it runs and scales on any platform.&lt;/p&gt;
       
       <guid>http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/</guid>
       <description>&lt;p&gt;If you followed my earlier posts, you know that I’m running a Kubernetes cluster
-on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.&lt;/p&gt;
+on Raspberry Pi, using &lt;strong&gt;HypriotOS&lt;/strong&gt; and Lucas Käldströms &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; project.
 
-&lt;p&gt;If not you can find my earlier posts here:&lt;/p&gt;
+If not you can find my earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt;&lt;/li&gt;
@@ -303,8 +300,7 @@ for trying out techniques, for building microservices.&lt;/p&gt;
 
 &lt;p&gt;By the way, I took the opportunity to overclock my Raspberry Pi:s.
 Thanks to &lt;a href=&#34;http://haydenjames.io/raspberry-pi-2-overclock/&#34;&gt;Hayden James&lt;/a&gt;, all
-cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
-</description>
+cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -313,9 +309,7 @@ cluster nodes now runs at 1000 Mhz, and it seems stable.&lt;/p&gt;
       <pubDate>Mon, 08 Feb 2016 16:39:34 +0100</pubDate>
       
       <guid>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-3/</guid>
-      <description>
-
-&lt;p&gt;This is the third part in a series on setting up Gogs and Drone on
+      <description>&lt;p&gt;This is the third part in a series on setting up Gogs and Drone on
 Kubernetes-ARM. You can find the earlier posts here:&lt;/p&gt;
 
 &lt;ul&gt;
@@ -325,7 +319,8 @@ Kubernetes-ARM. You can find the earlier posts here:&lt;/p&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;In this third episode I will try to show how to setup Drone on Kubernetes-ARM.
-A disclaimer, I&amp;rsquo;m new to Drone and out on deep water so&amp;hellip;&lt;/p&gt;
+A disclaimer, I&amp;rsquo;m new to Drone and out on deep water so&amp;hellip;
+&lt;/p&gt;
 
 &lt;p&gt;If your wondering about Drone take a look at
 &lt;a href=&#34;https://github.com/drone/drone&#34;&gt;GitHub page&lt;/a&gt;.&lt;/p&gt;
@@ -584,8 +579,7 @@ something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some 
 &lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&#34;&gt;https://github.com/kelseyhightower/docker-kubernetes-tls-guide&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/conf2kube&#34;&gt;https://github.com/kelseyhightower/conf2kube&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/drone-demos&#34;&gt;https://github.com/drone-demos&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
+&lt;/ul&gt;</description>
     </item>
     
     <item>
@@ -601,7 +595,8 @@ In &lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernet
 talked about setting up Gogs.&lt;/p&gt;
 
 &lt;p&gt;In this part I&amp;rsquo;ll explain how to setup &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose services
-outside the cluster.&lt;/p&gt;
+outside the cluster.
+&lt;/p&gt;
 
 &lt;p&gt;I&amp;rsquo;m using &lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas Käldström&lt;/a&gt;:s great
 &lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;kubernetes-on-arm&lt;/a&gt; project.
@@ -767,8 +762,7 @@ where you can monitor your exposed services. Fire up
 
 &lt;p&gt;That is all for now. In the next part we will take a look at the &lt;code&gt;CI&lt;/code&gt; tool
 &lt;a href=&#34;https://github.com/drone/drone&#34;&gt;Drone&lt;/a&gt; and how to get it working on our
-&lt;em&gt;Kubernetes-ARM&lt;/em&gt; cluster. Prepare for a journey &lt;em&gt;down the rabbit hole&lt;/em&gt;.&lt;/p&gt;
-</description>
+&lt;em&gt;Kubernetes-ARM&lt;/em&gt; cluster. Prepare for a journey &lt;em&gt;down the rabbit hole&lt;/em&gt;.&lt;/p&gt;</description>
     </item>
     
     <item>
@@ -780,7 +774,8 @@ where you can monitor your exposed services. Fire up
       <description>&lt;p&gt;This is part 1 in a series of posts describing how I have setup Gogs and Drone
 on my Kubernetes-ARM cluster. &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs - Go Git Service&lt;/a&gt; is
 &lt;em&gt;A painless self-hosted Git service&lt;/em&gt; and is a great alternative when you can&amp;rsquo;t
-use GitHub or wan&amp;rsquo;t to host your own Git service.&lt;/p&gt;
+use GitHub or wan&amp;rsquo;t to host your own Git service.
+&lt;/p&gt;
 
 &lt;p&gt;The easiest way to get started with Gogs (and of course the only alternative if
 you wan&amp;rsquo;t to use Kubernetes) is to use a Docker image. Gogs has a Docker image
@@ -931,8 +926,7 @@ and complete the installation.&lt;/p&gt;
 
 &lt;p&gt;In &lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Part 2&lt;/a&gt; I will
 explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose your services outside your
-cluster.&lt;/p&gt;
-</description>
+cluster.&lt;/p&gt;</description>
     </item>
     
   </channel>

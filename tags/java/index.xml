@@ -2,12 +2,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Java on kodbasen</title>
-    <link>http://larmog.github.io/tags/java/</link>
+    <link>http://larmog.github.io/tags/java/index.xml</link>
     <description>Recent content in Java on kodbasen</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Thu, 04 Feb 2016 20:56:35 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/tags/java/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
@@ -22,7 +21,8 @@ slow using keyboard (never learnt how to use it correctly). When programming
 that&amp;rsquo;s not always a bad thing, it gives you time to think about what you&amp;rsquo;re
 writing.
 But Java is very verbose and all those &lt;code&gt;private&lt;/code&gt;, &lt;code&gt;public&lt;/code&gt;, &lt;code&gt;;&lt;/code&gt;, &lt;code&gt;getXXX&lt;/code&gt;,
-&lt;code&gt;setXXX&lt;/code&gt; kind of gets in the way.&lt;/p&gt;
+&lt;code&gt;setXXX&lt;/code&gt; kind of gets in the way.
+&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;package main
 
@@ -80,8 +80,7 @@ $open http://tour.golang.org/welcome/1
 
 &lt;p&gt;I&amp;rsquo;m keeping Java in my toolbox but I&amp;rsquo;ve started using
 &lt;a href=&#34;https://golang.org/&#34;&gt;The Go Programming Language&lt;/a&gt; as my new tool and
-it&amp;rsquo;s great fun.&lt;/p&gt;
-</description>
+it&amp;rsquo;s great fun.&lt;/p&gt;</description>
     </item>
     
   </channel>
