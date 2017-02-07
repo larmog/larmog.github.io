@@ -161,7 +161,7 @@ traefik-lb          100.xx.xxx.xxx   <none>        80/TCP          1d
 We now have two services `kubernetes-dashboard` and `traefik-lb`. These are
 the `backends` for our `traefik` reverse proxy.
 
-Here's the `traefic.toml` file for our proxy:
+Here's the `traefik.toml` file for our proxy:
 
 ```
 logLevel = "DEBUG"
