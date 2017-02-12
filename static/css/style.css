@@ -62,3 +62,13 @@ footer.page-footer {
 .btn.facebook    { background: #3B5998;}
 .btn.linkedin    { background: #4875B4;}
 .btn.email       { background: #444444;}
+
+@media only print {
+  .facebook, .stumbleupon, .reddit, .linkedin, .email, .google-plus, .twitter, .side-nav, .parallax-container {
+    display: none;
+   }
+
+   #layout {
+    display: none !important;
+   }
+}
