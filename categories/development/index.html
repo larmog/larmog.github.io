@@ -7,7 +7,7 @@
   <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
   <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   
-  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection,print"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
   <style type="text/css">
   
@@ -60,6 +60,57 @@
 
 
 <div class="row">
+
+  
+  <div class="col m4 s12">
+    <div class="card">
+      <div class="card-content">
+        <h5><a href="http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/">Minio, simple storage for your cluster</a></h5>
+        <p>
+          
+          
+          <a href="http://larmog.github.io//categories/development/">Development</a>
+          
+          <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+          
+          <a href="http://larmog.github.io//categories/docker/">Docker</a>
+          
+          <a href="http://larmog.github.io//categories/cloud/">Cloud</a>
+          
+          
+        </p>
+        <p><p><img src="/media/minio-k8s.png" style="float:right;height:150px">
+I&rsquo;ve been using different volume types for storage in my <code>kubernetes-on-arm</code>
+cluster. I wrote two posts about it: <a href="/2016/02/22/glusterfs-on-kubernetes-arm/">GlusterFS On Kubernetes ARM</a> and <a href="/2016/05/12/storage-for-your-cluster/">Storage for your cluster</a> a year ago. All solutions adds complexity
+to the cluster, the one that&rsquo;s been easiest to handle is <code>nfs</code>. But <code>nfs</code> isn&rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
+not working as expected. The <code>emptyDir</code> volume type let&rsquo;s you mount an empty
+directory from the host in to your Pod. But when the Pod goes away, so does your
+volume, leaving you with nothing.
+</p></p>
+      <p>
+      7 Mar 2017
+      
+        
+          <a href="http://larmog.github.io//tags/development/">#Development</a>
+        
+          <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+        
+          <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+        
+          <a href="http://larmog.github.io//tags/minio/">#Minio</a>
+        
+          <a href="http://larmog.github.io//tags/storage/">#Storage</a>
+        
+      
+      </p>
+      </div>
+      <div style="text-align: right;">
+        <a style="text-transform: none;" class="btn-flat blue-text text-lighten-2" href="http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/">
+          Read more <i class="mdi-navigation-arrow-forward"></i>
+        </a>
+      </div>
+    </div>
+  </div>
 
   
   <div class="col m4 s12">
@@ -157,59 +208,6 @@ and <a href="/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/"><em>Part
       </div>
       <div style="text-align: right;">
         <a style="text-transform: none;" class="btn-flat blue-text text-lighten-2" href="http://larmog.github.io/2016/10/15/kubernetes-on-scaleway---part-3/">
-          Read more <i class="mdi-navigation-arrow-forward"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  
-  <div class="col m4 s12">
-    <div class="card">
-      <div class="card-content">
-        <h5><a href="http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/">Kubernetes on Scaleway - Part 1 (Revisited) &amp; 2</a></h5>
-        <p>
-          
-          
-          <a href="http://larmog.github.io//categories/development/">Development</a>
-          
-          <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
-          
-          <a href="http://larmog.github.io//categories/docker/">Docker</a>
-          
-          <a href="http://larmog.github.io//categories/cloud/">Cloud</a>
-          
-          
-        </p>
-        <p><p><a href="http://scaleway.com">
-<img src="https://www.scaleway.com/img/scaleway.f0e4.svg" style="float:right;height:80px"></a></p>
-
-<p>Things doesn&rsquo;t always turn out as planned. This is specially true when it comes
-to this series, on how to setup <em>Kubernetes</em> on <em>Scaleway</em>. The plan was that
-part 2 would be about setting up an <code>ingress-controller</code> and securing the
-<code>api-server</code> and <code>dashboard</code>. But in the meantime, while I was struggling with
-getting <code>weave</code> working on <code>ARM</code> and re-writing my own little project <code>sloop</code>,
-Kubernetes <code>v1.4.0</code> was released with the <code>kubeadm</code> tool.
-</p></p>
-      <p>
-      9 Oct 2016
-      
-        
-          <a href="http://larmog.github.io//tags/development/">#Development</a>
-        
-          <a href="http://larmog.github.io//tags/docker/">#Docker</a>
-        
-          <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
-        
-          <a href="http://larmog.github.io//tags/traefik/">#Traefik</a>
-        
-          <a href="http://larmog.github.io//tags/scaleway/">#Scaleway</a>
-        
-      
-      </p>
-      </div>
-      <div style="text-align: right;">
-        <a style="text-transform: none;" class="btn-flat blue-text text-lighten-2" href="http://larmog.github.io/2016/10/09/kubernetes-on-scaleway---part-1-revisited--2/">
           Read more <i class="mdi-navigation-arrow-forward"></i>
         </a>
       </div>

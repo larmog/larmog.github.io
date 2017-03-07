@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Minio on kodbasen</title>
+    <link>http://larmog.github.io/tags/minio/index.xml</link>
+    <description>Recent content in Minio on kodbasen</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Copyright © 2016 by larmog</copyright>
+    <atom:link href="http://larmog.github.io/tags/minio/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Minio, simple storage for your cluster</title>
+      <link>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</link>
+      <pubDate>Tue, 07 Mar 2017 11:08:59 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</guid>
+      <description>&lt;p&gt;&lt;img src=&#34;http://larmog.github.io/media/minio-k8s.png&#34; style=&#34;float:right;height:150px&#34;&gt;
+I&amp;rsquo;ve been using different volume types for storage in my &lt;code&gt;kubernetes-on-arm&lt;/code&gt;
+cluster. I wrote two posts about it: &lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;GlusterFS On Kubernetes ARM&lt;/a&gt; and &lt;a href=&#34;http://larmog.github.io/2016/05/12/storage-for-your-cluster/&#34;&gt;Storage for your cluster&lt;/a&gt; a year ago. All solutions adds complexity
+to the cluster, the one that&amp;rsquo;s been easiest to handle is &lt;code&gt;nfs&lt;/code&gt;. But &lt;code&gt;nfs&lt;/code&gt; isn&amp;rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
+not working as expected. The &lt;code&gt;emptyDir&lt;/code&gt; volume type let&amp;rsquo;s you mount an empty
+directory from the host in to your Pod. But when the Pod goes away, so does your
+volume, leaving you with nothing.
+&lt;/p&gt;
+
+&lt;p&gt;There is now beta features in Kubernetes &lt;code&gt;v1.5&lt;/code&gt; for &lt;code&gt;StatefulSet&lt;/code&gt; and
+&lt;code&gt;init-containers&lt;/code&gt; that got me started thinking. If one could use something
+like &lt;a href=&#34;https://minio.io/&#34;&gt;Minio&lt;/a&gt; for storage in combination with &lt;code&gt;emptyDir&lt;/code&gt;
+volumes, maybe we could end up with a &lt;em&gt;good enough&lt;/em&gt; solution that lowers the
+technology stack.&lt;/p&gt;
+
+&lt;p&gt;The plan was to have an &lt;code&gt;init-container&lt;/code&gt; running &lt;code&gt;minio mc&lt;/code&gt; to mirror
+in files from &lt;code&gt;minio server&lt;/code&gt; using the &lt;code&gt;mirror&lt;/code&gt; command to an
+&lt;code&gt;emptyDir&lt;/code&gt; volume in a &lt;code&gt;pod&lt;/code&gt; defined by a &lt;code&gt;StatefulSet&lt;/code&gt;. Once the &lt;code&gt;pod&lt;/code&gt; is up
+and running, file changes needs to be mirrored back to the &lt;code&gt;minio server&lt;/code&gt;, so
+that we don&amp;rsquo;t lose any data. The &lt;code&gt;minio server&lt;/code&gt; is also a &lt;code&gt;pod&lt;/code&gt; defined by a
+&lt;code&gt;StatefulSet&lt;/code&gt; but uses a &lt;code&gt;nfs persistentVolume&lt;/code&gt; for storage.&lt;/p&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Minio for simple storage&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/minio-k8s-storage.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;p&gt;The plan was to use the &lt;code&gt;mc mirror --watch&lt;/code&gt; command for mirroring changes back
+to the &lt;code&gt;minio server&lt;/code&gt;, and that is probably the most suitable solution, but there
+was a &lt;a href=&#34;https://github.com/minio/mc/issues/2047&#34;&gt;bug&lt;/a&gt; in the &lt;code&gt;arm64&lt;/code&gt; version so I
+had to create a work around.
+The work around is a simple script that for every &lt;code&gt;#&lt;/code&gt; seconds checks for changes
+and copies them using the  &lt;code&gt;mc cp&lt;/code&gt; command back to the server.&lt;/p&gt;
+
+&lt;p&gt;If you wan&amp;rsquo;t to try it out your self there&amp;rsquo;s &lt;em&gt;multiarch&lt;/em&gt; images for &lt;code&gt;arm&lt;/code&gt; and
+&lt;code&gt;arm64&lt;/code&gt; and a &lt;code&gt;mysql&lt;/code&gt; example at &lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-minio-server&#34;&gt;Starting &lt;code&gt;minio server&lt;/code&gt;&lt;/h4&gt;
+
+&lt;p&gt;The &lt;code&gt;accessKey&lt;/code&gt; and &lt;code&gt;secretKey&lt;/code&gt; is only for demo, you should create your own
+config files using &lt;code&gt;kubectl create configmap&lt;/code&gt; and mount it to your container at
+&lt;code&gt;/app/config.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # the minio server expects a persistentVolume of at least 5Gi
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+service &amp;quot;minio&amp;quot; created
+statefulset &amp;quot;minio&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          22s
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Once the &lt;code&gt;minio server&lt;/code&gt; is started you can access the ui using &lt;code&gt;port-forward&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # port-forward to your minio server and create a store0 bucket
+$ kubectl port-forward minio-0 9000:9000
+Forwarding from 127.0.0.1:9000 -&amp;gt; 9000
+Forwarding from [::1]:9000 -&amp;gt; 9000
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now you can login to &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and create a bucket
+named &lt;code&gt;store0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-the-mysql-example&#34;&gt;Starting the &lt;code&gt;mysql&lt;/code&gt; example&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+service &amp;quot;mysql&amp;quot; created
+statefulset &amp;quot;mysql&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS     RESTARTS   AGE
+minio-0   1/1       Running    0          3m
+mysql-0   0/2       Init:0/2   0          8s
+$ # you can see above, the two init containers has not yet run
+$
+$ kubectl get pods
+NAME      READY     STATUS            RESTARTS   AGE
+minio-0   1/1       Running           0          4m
+mysql-0   0/2       PodInitializing   0          28s
+$ # here you can see the pod is initializing
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          4m
+mysql-0   2/2       Running   0          49s
+$ # and finally our mysql database is up and running
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you go back to your &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and take
+a look at the &lt;code&gt;store0&lt;/code&gt; bucket, you should see all &lt;code&gt;mysql&lt;/code&gt; files mirrored back.&lt;/p&gt;
+
+&lt;h5 id=&#34;a-closer-look-whats-happening&#34;&gt;A closer look whats happening&lt;/h5&gt;
+
+&lt;p&gt;Here you can se that our &lt;code&gt;mysql&lt;/code&gt; example has two &lt;code&gt;init-containers&lt;/code&gt;.
+They are executed in order and the first (&lt;code&gt;setup&lt;/code&gt;) mirrors all files
+to the &lt;code&gt;persistentdata&lt;/code&gt; volume. The second container restores the file
+ownership.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+pod.beta.kubernetes.io/init-containers: &#39;[{
+  &amp;quot;name&amp;quot;: &amp;quot;setup&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;thenatureofsoftware/mc&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mirror&amp;quot;, &amp;quot;minio/store0&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+},
+{
+  &amp;quot;name&amp;quot;: &amp;quot;chown&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;tobi312/rpi-mysql:5.6&amp;quot;,
+  &amp;quot;command&amp;quot;: [&amp;quot;chown&amp;quot;, &amp;quot;-R&amp;quot;, &amp;quot;mysql:mysql&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+}]&#39;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The last pice of the puzzle is the &lt;code&gt;sidecar&lt;/code&gt; container to &lt;code&gt;mysql&lt;/code&gt; that mirrors
+changes back:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+- image: thenatureofsoftware/mc-mirror:latest
+        imagePullPolicy: Always
+        name: mc-mirror
+        args:
+        - /var/lib/mysql
+        - minio/store0
+        volumeMounts:
+        - mountPath: &amp;quot;/var/lib/mysql&amp;quot;
+          name: persistentdata
+      restartPolicy: Always
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;The solution has it&amp;rsquo;s pros and cons. The pros are that it uses the nodes
+local disk when using volume type &lt;code&gt;emptyDir&lt;/code&gt;. Once the volume is setup then there
+should be very few surprises. The problem is of course that you need to
+mirror everything back and the size of the local disk.&lt;/p&gt;
+
+&lt;p&gt;There are room for improvements like using the &lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api&#34;&gt;Downward API&lt;/a&gt; for creating buckets.&lt;/p&gt;
+
+&lt;p&gt;Mysql is probably one of the worst examples I&amp;rsquo;ve could have picket. I&amp;rsquo;ll
+try to add some more like &lt;code&gt;zookeeper&lt;/code&gt;, &lt;code&gt;cassandra&lt;/code&gt; and &lt;code&gt;elastic&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;links&#34;&gt;Links&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://minio.io/&#34;&gt;Minio Cloud Storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/&#34;&gt;StatefulSet&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/init-containers/&#34;&gt;Init Containers&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+  </channel>
+</rss>

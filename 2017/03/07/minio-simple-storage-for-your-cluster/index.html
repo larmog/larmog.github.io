@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+  <title>Minio, simple storage for your cluster</title>
+  <link href="http://larmog.github.io//css/font-awesome.min.css" rel="stylesheet">
+  <link href="http://larmog.github.io//css/materialize.min.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  
+  <link href="http://larmog.github.io//css/style.css" type="text/css" rel="stylesheet" media="screen,projection,print"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/styles/default.min.css">
+  <style type="text/css">
+  
+    footer.page-footer{background-image: url(http://larmog.github.io//images/kodbasenCover.jpg);}
+  
+  </style>
+</head>
+<body>
+  <ul id="slide-out" class="side-nav">
+    <li><a href="http://larmog.github.io/"><i class="mdi-action-home left"></i>Home<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//categories"><i class="mdi-action-perm-media left"></i>Categories<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//tags"><i class="mdi-action-loyalty left"></i>Tags<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+    <li><a href="http://larmog.github.io//about"><i class="mdi-action-info-outline left"></i>About<i class="mdi-hardware-keyboard-arrow-right right"></i></a></li>
+  </ul>
+  <div id="index-banner" class="parallax-container">
+  <a data-activates="slide-out" class="btn-floating button-collapse" style="top: 5px; left: 5px;"><i class="mdi-navigation-menu"></i></a>
+    <div class="section no-pad-bot">
+      <div class="container">
+        
+        <h1 class="header center teal-text text-lighten-2">kodbasen</h1>
+        <div class="row center">
+          <h5 class="header col s12 light">Where the compass is spinning around software</h5>
+        </div>
+        <div class="row center">
+        
+          <a href="https://github.com/larmog"><img src="http://larmog.github.io//images/github2-dreamstale35.png"></a>
+        
+        
+        
+          <a href="https://twitter.com/larmog"><img src="http://larmog.github.io//images/twitter-dreamstale71.png"></a>
+        
+        
+        
+          <a href="https://www.linkedin.com/in/larmog"><img src="http://larmog.github.io//images/linkedin-dreamstale45.png"></a>
+        
+          <a href="http://larmog.github.io//index.xml"><img src="http://larmog.github.io//images/feed-dreamstale27.png"></a>
+        </div>
+      </div>
+    </div>
+    <div class="parallax">
+    
+      <img src="http://larmog.github.io//images/kodbasenCover.jpg">
+    
+    </div>
+  </div>
+
+
+
+<div class="container">
+  <div class="section">
+
+    <div class="row">
+      <div class="col s12">
+        <div class="card-panel">
+          <h4>Minio, simple storage for your cluster</h4>
+          <p>
+          
+            
+              <a href="http://larmog.github.io//categories/development/">Development</a>
+            
+              <a href="http://larmog.github.io//categories/kubernetes/">Kubernetes</a>
+            
+              <a href="http://larmog.github.io//categories/docker/">Docker</a>
+            
+              <a href="http://larmog.github.io//categories/cloud/">Cloud</a>
+            
+          
+          </p>
+          <p><p><img src="/media/minio-k8s.png" style="float:right;height:150px">
+I&rsquo;ve been using different volume types for storage in my <code>kubernetes-on-arm</code>
+cluster. I wrote two posts about it: <a href="/2016/02/22/glusterfs-on-kubernetes-arm/">GlusterFS On Kubernetes ARM</a> and <a href="/2016/05/12/storage-for-your-cluster/">Storage for your cluster</a> a year ago. All solutions adds complexity
+to the cluster, the one that&rsquo;s been easiest to handle is <code>nfs</code>. But <code>nfs</code> isn&rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
+not working as expected. The <code>emptyDir</code> volume type let&rsquo;s you mount an empty
+directory from the host in to your Pod. But when the Pod goes away, so does your
+volume, leaving you with nothing.
+</p>
+
+<p>There is now beta features in Kubernetes <code>v1.5</code> for <code>StatefulSet</code> and
+<code>init-containers</code> that got me started thinking. If one could use something
+like <a href="https://minio.io/">Minio</a> for storage in combination with <code>emptyDir</code>
+volumes, maybe we could end up with a <em>good enough</em> solution that lowers the
+technology stack.</p>
+
+<p>The plan was to have an <code>init-container</code> running <code>minio mc</code> to mirror
+in files from <code>minio server</code> using the <code>mirror</code> command to an
+<code>emptyDir</code> volume in a <code>pod</code> defined by a <code>StatefulSet</code>. Once the <code>pod</code> is up
+and running, file changes needs to be mirrored back to the <code>minio server</code>, so
+that we don&rsquo;t lose any data. The <code>minio server</code> is also a <code>pod</code> defined by a
+<code>StatefulSet</code> but uses a <code>nfs persistentVolume</code> for storage.</p>
+
+
+<figure>
+  <div class="card blue-grey teal lighten-5">
+    <div class="card-content black-text">
+      
+      <figcaption>
+          <span class="card-title black-text">Minio for simple storage</span>
+          
+      </figcaption>
+      
+      
+          <img class="responsive-img" src="/media/minio-k8s-storage.png"  />
+      
+    </div>
+  </div>
+</figure>
+
+
+
+<p>The plan was to use the <code>mc mirror --watch</code> command for mirroring changes back
+to the <code>minio server</code>, and that is probably the most suitable solution, but there
+was a <a href="https://github.com/minio/mc/issues/2047">bug</a> in the <code>arm64</code> version so I
+had to create a work around.
+The work around is a simple script that for every <code>#</code> seconds checks for changes
+and copies them using the  <code>mc cp</code> command back to the server.</p>
+
+<p>If you wan&rsquo;t to try it out your self there&rsquo;s <em>multiarch</em> images for <code>arm</code> and
+<code>arm64</code> and a <code>mysql</code> example at <a href="https://github.com/TheNatureOfSoftware/minio-k8s-storage">minio-k8s-storage</a>.</p>
+
+<h4 id="starting-minio-server">Starting <code>minio server</code></h4>
+
+<p>The <code>accessKey</code> and <code>secretKey</code> is only for demo, you should create your own
+config files using <code>kubectl create configmap</code> and mount it to your container at
+<code>/app/config.json</code>.</p>
+
+<pre><code class="language-shell">
+$ # the minio server expects a persistentVolume of at least 5Gi
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+service &quot;minio&quot; created
+statefulset &quot;minio&quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          22s
+
+</code></pre>
+
+<p>Once the <code>minio server</code> is started you can access the ui using <code>port-forward</code>:</p>
+
+<pre><code class="language-shell">
+$ # port-forward to your minio server and create a store0 bucket
+$ kubectl port-forward minio-0 9000:9000
+Forwarding from 127.0.0.1:9000 -&gt; 9000
+Forwarding from [::1]:9000 -&gt; 9000
+
+</code></pre>
+
+<p>Now you can login to <code>minio server</code>: <a href="http://localhost:9090">http://localhost:9090</a> and create a bucket
+named <code>store0</code>.</p>
+
+<h4 id="starting-the-mysql-example">Starting the <code>mysql</code> example</h4>
+
+<pre><code class="language-shell">
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+service &quot;mysql&quot; created
+statefulset &quot;mysql&quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS     RESTARTS   AGE
+minio-0   1/1       Running    0          3m
+mysql-0   0/2       Init:0/2   0          8s
+$ # you can see above, the two init containers has not yet run
+$
+$ kubectl get pods
+NAME      READY     STATUS            RESTARTS   AGE
+minio-0   1/1       Running           0          4m
+mysql-0   0/2       PodInitializing   0          28s
+$ # here you can see the pod is initializing
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          4m
+mysql-0   2/2       Running   0          49s
+$ # and finally our mysql database is up and running
+
+</code></pre>
+
+<p>If you go back to your <code>minio server</code>: <a href="http://localhost:9090">http://localhost:9090</a> and take
+a look at the <code>store0</code> bucket, you should see all <code>mysql</code> files mirrored back.</p>
+
+<h5 id="a-closer-look-whats-happening">A closer look whats happening</h5>
+
+<p>Here you can se that our <code>mysql</code> example has two <code>init-containers</code>.
+They are executed in order and the first (<code>setup</code>) mirrors all files
+to the <code>persistentdata</code> volume. The second container restores the file
+ownership.</p>
+
+<pre><code>
+pod.beta.kubernetes.io/init-containers: '[{
+  &quot;name&quot;: &quot;setup&quot;,
+  &quot;image&quot;: &quot;thenatureofsoftware/mc&quot;,
+  &quot;args&quot;: [&quot;mirror&quot;, &quot;minio/store0&quot;, &quot;/var/lib/mysql&quot;],
+  &quot;volumeMounts&quot;: [{
+    &quot;mountPath&quot;: &quot;/var/lib/mysql&quot;,
+    &quot;name&quot;: &quot;persistentdata&quot;
+  }]
+},
+{
+  &quot;name&quot;: &quot;chown&quot;,
+  &quot;image&quot;: &quot;tobi312/rpi-mysql:5.6&quot;,
+  &quot;command&quot;: [&quot;chown&quot;, &quot;-R&quot;, &quot;mysql:mysql&quot;, &quot;/var/lib/mysql&quot;],
+  &quot;volumeMounts&quot;: [{
+    &quot;mountPath&quot;: &quot;/var/lib/mysql&quot;,
+    &quot;name&quot;: &quot;persistentdata&quot;
+  }]
+}]'
+
+</code></pre>
+
+<p>The last pice of the puzzle is the <code>sidecar</code> container to <code>mysql</code> that mirrors
+changes back:</p>
+
+<pre><code>
+- image: thenatureofsoftware/mc-mirror:latest
+        imagePullPolicy: Always
+        name: mc-mirror
+        args:
+        - /var/lib/mysql
+        - minio/store0
+        volumeMounts:
+        - mountPath: &quot;/var/lib/mysql&quot;
+          name: persistentdata
+      restartPolicy: Always
+
+</code></pre>
+
+<h4 id="to-sum-up">To sum up</h4>
+
+<p>The solution has it&rsquo;s pros and cons. The pros are that it uses the nodes
+local disk when using volume type <code>emptyDir</code>. Once the volume is setup then there
+should be very few surprises. The problem is of course that you need to
+mirror everything back and the size of the local disk.</p>
+
+<p>There are room for improvements like using the <a href="https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api">Downward API</a> for creating buckets.</p>
+
+<p>Mysql is probably one of the worst examples I&rsquo;ve could have picket. I&rsquo;ll
+try to add some more like <code>zookeeper</code>, <code>cassandra</code> and <code>elastic</code>.</p>
+
+<h4 id="links">Links</h4>
+
+<ul>
+<li><a href="https://minio.io/">Minio Cloud Storage</a></li>
+<li><a href="https://github.com/TheNatureOfSoftware/minio-k8s-storage">minio-k8s-storage</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/">StatefulSet</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/abstractions/init-containers/">Init Containers</a></li>
+</ul></p>
+          <p>7 Mar 2017
+            
+              
+                <a href="http://larmog.github.io//tags/development/">#Development</a>
+              
+                <a href="http://larmog.github.io//tags/docker/">#Docker</a>
+              
+                <a href="http://larmog.github.io//tags/kubernetes/">#Kubernetes</a>
+              
+                <a href="http://larmog.github.io//tags/minio/">#Minio</a>
+              
+                <a href="http://larmog.github.io//tags/storage/">#Storage</a>
+              
+            
+          </p>
+          <div>
+
+
+
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&text=Minio%2c%20simple%20storage%20for%20your%20cluster&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+    <i class="fa fa-twitter"></i>
+</a>
+
+
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+    <i class="fa fa-google-plus"></i>
+</a>
+
+
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn facebook">
+    <i class="fa fa-facebook"></i>
+</a>
+
+
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn stumbleupon">
+    <i class="fa fa-stumbleupon"></i>
+</a>
+
+
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn reddit">
+    <i class="fa fa-reddit"></i>
+</a>
+
+
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&mini=true&title=Minio%2c%20simple%20storage%20for%20your%20cluster&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+    <i class="fa fa-linkedin"></i>
+</a>
+
+
+<a href="mailto:?subject=Minio%2c%20simple%20storage%20for%20your%20cluster&body=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn email">
+    <i class="fa fa-envelope"></i>
+</a>
+</div>
+
+          
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+     
+    var disqus_shortname = 'larmog';
+    
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large disabled"><i class="mdi-navigation-arrow-back"></i></a>
+      
+      </div>
+      <div class="col s6 m10 center">&nbsp</div>
+      <div class="col s3 m1">
+      
+        <a class="btn-floating btn-large waves-effect waves-light" href="http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/"><i class="mdi-navigation-arrow-forward"></i></a>
+      
+      </div>
+    </div>
+
+  </div>
+</div>
+
+  <footer class="page-footer">
+    <div class="footer-copyright">
+      <div class="container">
+      Copyright © 2016 by larmog
+      <div class="right">Design <a class="grey-text text-lighten-4" href="http://pdevty.github.io/blog/">pdevty</a></div>
+      </div>
+    </div>
+  </footer>
+  <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="http://larmog.github.io//js/materialize.min.js"></script>
+  <script src="http://larmog.github.io//js/init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-73372924-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+  
+
+  </body>
+</html>
+

@@ -10,6 +10,192 @@
     <atom:link href="http://larmog.github.io/categories/docker/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Minio, simple storage for your cluster</title>
+      <link>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</link>
+      <pubDate>Tue, 07 Mar 2017 11:08:59 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</guid>
+      <description>&lt;p&gt;&lt;img src=&#34;http://larmog.github.io/media/minio-k8s.png&#34; style=&#34;float:right;height:150px&#34;&gt;
+I&amp;rsquo;ve been using different volume types for storage in my &lt;code&gt;kubernetes-on-arm&lt;/code&gt;
+cluster. I wrote two posts about it: &lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;GlusterFS On Kubernetes ARM&lt;/a&gt; and &lt;a href=&#34;http://larmog.github.io/2016/05/12/storage-for-your-cluster/&#34;&gt;Storage for your cluster&lt;/a&gt; a year ago. All solutions adds complexity
+to the cluster, the one that&amp;rsquo;s been easiest to handle is &lt;code&gt;nfs&lt;/code&gt;. But &lt;code&gt;nfs&lt;/code&gt; isn&amp;rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
+not working as expected. The &lt;code&gt;emptyDir&lt;/code&gt; volume type let&amp;rsquo;s you mount an empty
+directory from the host in to your Pod. But when the Pod goes away, so does your
+volume, leaving you with nothing.
+&lt;/p&gt;
+
+&lt;p&gt;There is now beta features in Kubernetes &lt;code&gt;v1.5&lt;/code&gt; for &lt;code&gt;StatefulSet&lt;/code&gt; and
+&lt;code&gt;init-containers&lt;/code&gt; that got me started thinking. If one could use something
+like &lt;a href=&#34;https://minio.io/&#34;&gt;Minio&lt;/a&gt; for storage in combination with &lt;code&gt;emptyDir&lt;/code&gt;
+volumes, maybe we could end up with a &lt;em&gt;good enough&lt;/em&gt; solution that lowers the
+technology stack.&lt;/p&gt;
+
+&lt;p&gt;The plan was to have an &lt;code&gt;init-container&lt;/code&gt; running &lt;code&gt;minio mc&lt;/code&gt; to mirror
+in files from &lt;code&gt;minio server&lt;/code&gt; using the &lt;code&gt;mirror&lt;/code&gt; command to an
+&lt;code&gt;emptyDir&lt;/code&gt; volume in a &lt;code&gt;pod&lt;/code&gt; defined by a &lt;code&gt;StatefulSet&lt;/code&gt;. Once the &lt;code&gt;pod&lt;/code&gt; is up
+and running, file changes needs to be mirrored back to the &lt;code&gt;minio server&lt;/code&gt;, so
+that we don&amp;rsquo;t lose any data. The &lt;code&gt;minio server&lt;/code&gt; is also a &lt;code&gt;pod&lt;/code&gt; defined by a
+&lt;code&gt;StatefulSet&lt;/code&gt; but uses a &lt;code&gt;nfs persistentVolume&lt;/code&gt; for storage.&lt;/p&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Minio for simple storage&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/minio-k8s-storage.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;p&gt;The plan was to use the &lt;code&gt;mc mirror --watch&lt;/code&gt; command for mirroring changes back
+to the &lt;code&gt;minio server&lt;/code&gt;, and that is probably the most suitable solution, but there
+was a &lt;a href=&#34;https://github.com/minio/mc/issues/2047&#34;&gt;bug&lt;/a&gt; in the &lt;code&gt;arm64&lt;/code&gt; version so I
+had to create a work around.
+The work around is a simple script that for every &lt;code&gt;#&lt;/code&gt; seconds checks for changes
+and copies them using the  &lt;code&gt;mc cp&lt;/code&gt; command back to the server.&lt;/p&gt;
+
+&lt;p&gt;If you wan&amp;rsquo;t to try it out your self there&amp;rsquo;s &lt;em&gt;multiarch&lt;/em&gt; images for &lt;code&gt;arm&lt;/code&gt; and
+&lt;code&gt;arm64&lt;/code&gt; and a &lt;code&gt;mysql&lt;/code&gt; example at &lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-minio-server&#34;&gt;Starting &lt;code&gt;minio server&lt;/code&gt;&lt;/h4&gt;
+
+&lt;p&gt;The &lt;code&gt;accessKey&lt;/code&gt; and &lt;code&gt;secretKey&lt;/code&gt; is only for demo, you should create your own
+config files using &lt;code&gt;kubectl create configmap&lt;/code&gt; and mount it to your container at
+&lt;code&gt;/app/config.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # the minio server expects a persistentVolume of at least 5Gi
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+service &amp;quot;minio&amp;quot; created
+statefulset &amp;quot;minio&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          22s
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Once the &lt;code&gt;minio server&lt;/code&gt; is started you can access the ui using &lt;code&gt;port-forward&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # port-forward to your minio server and create a store0 bucket
+$ kubectl port-forward minio-0 9000:9000
+Forwarding from 127.0.0.1:9000 -&amp;gt; 9000
+Forwarding from [::1]:9000 -&amp;gt; 9000
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now you can login to &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and create a bucket
+named &lt;code&gt;store0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-the-mysql-example&#34;&gt;Starting the &lt;code&gt;mysql&lt;/code&gt; example&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+service &amp;quot;mysql&amp;quot; created
+statefulset &amp;quot;mysql&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS     RESTARTS   AGE
+minio-0   1/1       Running    0          3m
+mysql-0   0/2       Init:0/2   0          8s
+$ # you can see above, the two init containers has not yet run
+$
+$ kubectl get pods
+NAME      READY     STATUS            RESTARTS   AGE
+minio-0   1/1       Running           0          4m
+mysql-0   0/2       PodInitializing   0          28s
+$ # here you can see the pod is initializing
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          4m
+mysql-0   2/2       Running   0          49s
+$ # and finally our mysql database is up and running
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you go back to your &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and take
+a look at the &lt;code&gt;store0&lt;/code&gt; bucket, you should see all &lt;code&gt;mysql&lt;/code&gt; files mirrored back.&lt;/p&gt;
+
+&lt;h5 id=&#34;a-closer-look-whats-happening&#34;&gt;A closer look whats happening&lt;/h5&gt;
+
+&lt;p&gt;Here you can se that our &lt;code&gt;mysql&lt;/code&gt; example has two &lt;code&gt;init-containers&lt;/code&gt;.
+They are executed in order and the first (&lt;code&gt;setup&lt;/code&gt;) mirrors all files
+to the &lt;code&gt;persistentdata&lt;/code&gt; volume. The second container restores the file
+ownership.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+pod.beta.kubernetes.io/init-containers: &#39;[{
+  &amp;quot;name&amp;quot;: &amp;quot;setup&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;thenatureofsoftware/mc&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mirror&amp;quot;, &amp;quot;minio/store0&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+},
+{
+  &amp;quot;name&amp;quot;: &amp;quot;chown&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;tobi312/rpi-mysql:5.6&amp;quot;,
+  &amp;quot;command&amp;quot;: [&amp;quot;chown&amp;quot;, &amp;quot;-R&amp;quot;, &amp;quot;mysql:mysql&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+}]&#39;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The last pice of the puzzle is the &lt;code&gt;sidecar&lt;/code&gt; container to &lt;code&gt;mysql&lt;/code&gt; that mirrors
+changes back:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+- image: thenatureofsoftware/mc-mirror:latest
+        imagePullPolicy: Always
+        name: mc-mirror
+        args:
+        - /var/lib/mysql
+        - minio/store0
+        volumeMounts:
+        - mountPath: &amp;quot;/var/lib/mysql&amp;quot;
+          name: persistentdata
+      restartPolicy: Always
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;The solution has it&amp;rsquo;s pros and cons. The pros are that it uses the nodes
+local disk when using volume type &lt;code&gt;emptyDir&lt;/code&gt;. Once the volume is setup then there
+should be very few surprises. The problem is of course that you need to
+mirror everything back and the size of the local disk.&lt;/p&gt;
+
+&lt;p&gt;There are room for improvements like using the &lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api&#34;&gt;Downward API&lt;/a&gt; for creating buckets.&lt;/p&gt;
+
+&lt;p&gt;Mysql is probably one of the worst examples I&amp;rsquo;ve could have picket. I&amp;rsquo;ll
+try to add some more like &lt;code&gt;zookeeper&lt;/code&gt;, &lt;code&gt;cassandra&lt;/code&gt; and &lt;code&gt;elastic&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;links&#34;&gt;Links&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://minio.io/&#34;&gt;Minio Cloud Storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/&#34;&gt;StatefulSet&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/init-containers/&#34;&gt;Init Containers&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
+    
+    <item>
       <title>Installing Kubernetes on ARM with kubeadm</title>
       <link>http://larmog.github.io/2016/10/28/installing-kubernetes-on-arm-with-kubeadm/</link>
       <pubDate>Fri, 28 Oct 2016 05:15:54 +0200</pubDate>
@@ -2335,170 +2521,6 @@ where you can monitor your exposed services. Fire up
 &lt;p&gt;That is all for now. In the next part we will take a look at the &lt;code&gt;CI&lt;/code&gt; tool
 &lt;a href=&#34;https://github.com/drone/drone&#34;&gt;Drone&lt;/a&gt; and how to get it working on our
 &lt;em&gt;Kubernetes-ARM&lt;/em&gt; cluster. Prepare for a journey &lt;em&gt;down the rabbit hole&lt;/em&gt;.&lt;/p&gt;</description>
-    </item>
-    
-    <item>
-      <title>Gogs and Drone On Kubernetes-ARM - Part 1</title>
-      <link>http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/</link>
-      <pubDate>Sun, 07 Feb 2016 11:17:02 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/</guid>
-      <description>&lt;p&gt;This is part 1 in a series of posts describing how I have setup Gogs and Drone
-on my Kubernetes-ARM cluster. &lt;a href=&#34;https://gogs.io/&#34;&gt;Gogs - Go Git Service&lt;/a&gt; is
-&lt;em&gt;A painless self-hosted Git service&lt;/em&gt; and is a great alternative when you can&amp;rsquo;t
-use GitHub or wan&amp;rsquo;t to host your own Git service.
-&lt;/p&gt;
-
-&lt;p&gt;The easiest way to get started with Gogs (and of course the only alternative if
-you wan&amp;rsquo;t to use Kubernetes) is to use a Docker image. Gogs has a Docker image
-ready on Docker Hub. Unfortunately that image won&amp;rsquo;t work on ARM.
-Thankfully the Hypriot team has two Gogs Docker images ready: &lt;a href=&#34;https://hub.docker.com/r/hypriot/rpi-gogs-raspbian/&#34;&gt;hypriot/rpi-gogs-raspbian&lt;/a&gt;
-and &lt;a href=&#34;https://hub.docker.com/r/hypriot/rpi-gogs-alpine/&#34;&gt;hypriot/rpi-gogs-alpine&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;Lets try it out:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl run my-gogs --image=hypriot/rpi-gogs-alpine --replicas=1 --port=3000
-replicationcontroller &amp;quot;my-gogs-service&amp;quot; created
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Here we can see our pod is running:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get pods
-NAME                      READY     STATUS    RESTARTS   AGE
-my-gogs-3adh8             1/1       Running   0          1m
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now it&amp;rsquo;s time to expose our new pod as a service:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl expose rc my-gogs --port=80 --target-port=3000 --name=my-gogs-service
-service &amp;quot;my-gogs-service&amp;quot; exposed
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If all went well we can now access or new service:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version:
-&amp;lt;p class=&amp;quot;left&amp;quot; id=&amp;quot;footer-rights&amp;quot;&amp;gt;© 2015 Gogs · Version: 0.6.1.0325 Beta Page:&amp;lt;strong&amp;gt;2259ms&amp;lt;/strong&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;But oops! that´s kind of an old version. Our goal is to use Gogs together with
-Drone and this won&amp;rsquo;t work. We need a version greater than &lt;code&gt;0.6.16.1022&lt;/code&gt;
-(&lt;a href=&#34;http://readme.drone.io/setup/gogs/&#34;&gt;see&lt;/a&gt;). I guess this is the difference
-between &lt;em&gt;leading edge&lt;/em&gt; and &lt;em&gt;bleeding edge&lt;/em&gt;. Again we&amp;rsquo;re saved by some one else&amp;rsquo;s
-work. Gogs has a &lt;code&gt;Dockerfile.rpi&lt;/code&gt; ready that we can use to build our own image.
-I&amp;rsquo;ve built and pushed an image to Docker Hub that you can use:
-&lt;a href=&#34;https://hub.docker.com/r/larmog/rpi-gogs/&#34;&gt;&lt;code&gt;larmog/rpi-gogs&lt;/code&gt;&lt;/a&gt; that is &lt;code&gt;33MB&lt;/code&gt;.&lt;/p&gt;
-
-&lt;p&gt;So lets repeat the steps above with the new image and &lt;code&gt;curl&lt;/code&gt; for the version:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ curl -s http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service/install|grep Version
-© 2016 Gogs Version: 0.8.23.0126 Page: &amp;lt;strong&amp;gt;1622ms&amp;lt;/strong&amp;gt; Template: &amp;lt;strong&amp;gt;1619ms&amp;lt;/strong&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Version &lt;code&gt;0.8.23.0126&lt;/code&gt;, that looks so much better don&amp;rsquo;t, you think?&lt;/p&gt;
-
-&lt;p&gt;Next step is to install Gogs. But hey&amp;hellip; wait a minute - what about persistence?
-We need to add a &lt;em&gt;Volume&lt;/em&gt;. I&amp;rsquo;m using my home NAS, a DiskStation, over NFS. The
-only thing we need to do is to share a volume over NFS and install NFS on our
-nodes.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ sudo apt-get -y install nfs-common
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Next we need to create a &lt;code&gt;PersistentVolume&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-gogs
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Recycle
-  nfs:
-    path: /volume1/kbn1/gogs
-    server: my-nfs-server
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;and then a &lt;code&gt;PersistentVolumeClaim&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: pvc-gogs
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;and lastly mount the volume in our pod template:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: ReplicationController
-metadata:
-  labels:
-    app: my-gogs
-  name: my-gogs
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    app: my-gogs
-  template:
-    metadata:
-      labels:
-        app: my-gogs
-    spec:
-      containers:
-      - image: larmog/rpi-gogs:0.8.23.0126-2
-        imagePullPolicy: IfNotPresent
-        name: my-gogs
-        volumeMounts:
-        - mountPath: &amp;quot;/data&amp;quot;
-          name: persistentdata
-        resources: {}
-        ports:
-          - containerPort: 3000
-            name: web   
-            protocol: TCP
-          - containerPort: 22
-            name: ssh
-            protocol: TCP
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
-      volumes:
-        - name: persistentdata
-          persistentVolumeClaim:
-            claimName: pvc-gogs
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;NFS v4 is kind of hard to use if you don&amp;rsquo;t have synchronized your users and
-groups in your domain. I use &lt;code&gt;all_squash&lt;/code&gt; to a specific UID/GID in order to get
-it to work with my NAS, and that works fine for Gogs but I&amp;rsquo;ve got plans to
-replace NFS with &lt;a href=&#34;https://www.gluster.org/&#34;&gt;GlusterFS&lt;/a&gt; and it&amp;rsquo;s on the &lt;code&gt;TODO&lt;/code&gt;
-list.&lt;/p&gt;
-
-&lt;p&gt;Let&amp;rsquo;s enjoy the fruit of our work (or as we say in Sweden: &amp;ldquo;ett Ernst ögonblick&amp;rdquo;):&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl get services
-NAME             CLUSTER_IP   EXTERNAL_IP   PORT(S)    SELECTOR       AGE
-my-gogs-service  10.0.0.85    &amp;lt;none&amp;gt;        80/TCP     app=gogs       9d
-my-gogs-ssh      10.0.0.216   nodes         2222/TCP   app=gogs       9d
-kubernetes       10.0.0.1     &amp;lt;none&amp;gt;        443/TCP    &amp;lt;none&amp;gt;         25d
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Notice that I&amp;rsquo;ve also created a service for the &lt;code&gt;ssh&lt;/code&gt; port.
-Now we can complete the Gogs installation. Open the url (http://[master-ip]:8080/api/v1/proxy/namespaces/default/services/my-gogs-service)
-and complete the installation.&lt;/p&gt;
-
-&lt;p&gt;In &lt;a href=&#34;http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/&#34;&gt;Part 2&lt;/a&gt; I will
-explain how to set up &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose your services outside your
-cluster.&lt;/p&gt;</description>
     </item>
     
   </channel>

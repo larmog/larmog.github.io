@@ -7,8 +7,194 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2016 by larmog</copyright>
-    <lastBuildDate>Fri, 28 Oct 2016 05:15:54 +0200</lastBuildDate>
+    <lastBuildDate>Tue, 07 Mar 2017 11:08:59 +0100</lastBuildDate>
     <atom:link href="http://larmog.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Minio, simple storage for your cluster</title>
+      <link>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</link>
+      <pubDate>Tue, 07 Mar 2017 11:08:59 +0100</pubDate>
+      
+      <guid>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</guid>
+      <description>&lt;p&gt;&lt;img src=&#34;http://larmog.github.io/media/minio-k8s.png&#34; style=&#34;float:right;height:150px&#34;&gt;
+I&amp;rsquo;ve been using different volume types for storage in my &lt;code&gt;kubernetes-on-arm&lt;/code&gt;
+cluster. I wrote two posts about it: &lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;GlusterFS On Kubernetes ARM&lt;/a&gt; and &lt;a href=&#34;http://larmog.github.io/2016/05/12/storage-for-your-cluster/&#34;&gt;Storage for your cluster&lt;/a&gt; a year ago. All solutions adds complexity
+to the cluster, the one that&amp;rsquo;s been easiest to handle is &lt;code&gt;nfs&lt;/code&gt;. But &lt;code&gt;nfs&lt;/code&gt; isn&amp;rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
+not working as expected. The &lt;code&gt;emptyDir&lt;/code&gt; volume type let&amp;rsquo;s you mount an empty
+directory from the host in to your Pod. But when the Pod goes away, so does your
+volume, leaving you with nothing.
+&lt;/p&gt;
+
+&lt;p&gt;There is now beta features in Kubernetes &lt;code&gt;v1.5&lt;/code&gt; for &lt;code&gt;StatefulSet&lt;/code&gt; and
+&lt;code&gt;init-containers&lt;/code&gt; that got me started thinking. If one could use something
+like &lt;a href=&#34;https://minio.io/&#34;&gt;Minio&lt;/a&gt; for storage in combination with &lt;code&gt;emptyDir&lt;/code&gt;
+volumes, maybe we could end up with a &lt;em&gt;good enough&lt;/em&gt; solution that lowers the
+technology stack.&lt;/p&gt;
+
+&lt;p&gt;The plan was to have an &lt;code&gt;init-container&lt;/code&gt; running &lt;code&gt;minio mc&lt;/code&gt; to mirror
+in files from &lt;code&gt;minio server&lt;/code&gt; using the &lt;code&gt;mirror&lt;/code&gt; command to an
+&lt;code&gt;emptyDir&lt;/code&gt; volume in a &lt;code&gt;pod&lt;/code&gt; defined by a &lt;code&gt;StatefulSet&lt;/code&gt;. Once the &lt;code&gt;pod&lt;/code&gt; is up
+and running, file changes needs to be mirrored back to the &lt;code&gt;minio server&lt;/code&gt;, so
+that we don&amp;rsquo;t lose any data. The &lt;code&gt;minio server&lt;/code&gt; is also a &lt;code&gt;pod&lt;/code&gt; defined by a
+&lt;code&gt;StatefulSet&lt;/code&gt; but uses a &lt;code&gt;nfs persistentVolume&lt;/code&gt; for storage.&lt;/p&gt;
+
+
+&lt;figure&gt;
+  &lt;div class=&#34;card blue-grey teal lighten-5&#34;&gt;
+    &lt;div class=&#34;card-content black-text&#34;&gt;
+      
+      &lt;figcaption&gt;
+          &lt;span class=&#34;card-title black-text&#34;&gt;Minio for simple storage&lt;/span&gt;
+          
+      &lt;/figcaption&gt;
+      
+      
+          &lt;img class=&#34;responsive-img&#34; src=&#34;http://larmog.github.io/media/minio-k8s-storage.png&#34;  /&gt;
+      
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/figure&gt;
+
+
+
+&lt;p&gt;The plan was to use the &lt;code&gt;mc mirror --watch&lt;/code&gt; command for mirroring changes back
+to the &lt;code&gt;minio server&lt;/code&gt;, and that is probably the most suitable solution, but there
+was a &lt;a href=&#34;https://github.com/minio/mc/issues/2047&#34;&gt;bug&lt;/a&gt; in the &lt;code&gt;arm64&lt;/code&gt; version so I
+had to create a work around.
+The work around is a simple script that for every &lt;code&gt;#&lt;/code&gt; seconds checks for changes
+and copies them using the  &lt;code&gt;mc cp&lt;/code&gt; command back to the server.&lt;/p&gt;
+
+&lt;p&gt;If you wan&amp;rsquo;t to try it out your self there&amp;rsquo;s &lt;em&gt;multiarch&lt;/em&gt; images for &lt;code&gt;arm&lt;/code&gt; and
+&lt;code&gt;arm64&lt;/code&gt; and a &lt;code&gt;mysql&lt;/code&gt; example at &lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-minio-server&#34;&gt;Starting &lt;code&gt;minio server&lt;/code&gt;&lt;/h4&gt;
+
+&lt;p&gt;The &lt;code&gt;accessKey&lt;/code&gt; and &lt;code&gt;secretKey&lt;/code&gt; is only for demo, you should create your own
+config files using &lt;code&gt;kubectl create configmap&lt;/code&gt; and mount it to your container at
+&lt;code&gt;/app/config.json&lt;/code&gt;.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # the minio server expects a persistentVolume of at least 5Gi
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+service &amp;quot;minio&amp;quot; created
+statefulset &amp;quot;minio&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          22s
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Once the &lt;code&gt;minio server&lt;/code&gt; is started you can access the ui using &lt;code&gt;port-forward&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ # port-forward to your minio server and create a store0 bucket
+$ kubectl port-forward minio-0 9000:9000
+Forwarding from 127.0.0.1:9000 -&amp;gt; 9000
+Forwarding from [::1]:9000 -&amp;gt; 9000
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now you can login to &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and create a bucket
+named &lt;code&gt;store0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;starting-the-mysql-example&#34;&gt;Starting the &lt;code&gt;mysql&lt;/code&gt; example&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+service &amp;quot;mysql&amp;quot; created
+statefulset &amp;quot;mysql&amp;quot; created
+$
+$ kubectl get pods
+NAME      READY     STATUS     RESTARTS   AGE
+minio-0   1/1       Running    0          3m
+mysql-0   0/2       Init:0/2   0          8s
+$ # you can see above, the two init containers has not yet run
+$
+$ kubectl get pods
+NAME      READY     STATUS            RESTARTS   AGE
+minio-0   1/1       Running           0          4m
+mysql-0   0/2       PodInitializing   0          28s
+$ # here you can see the pod is initializing
+$
+$ kubectl get pods
+NAME      READY     STATUS    RESTARTS   AGE
+minio-0   1/1       Running   0          4m
+mysql-0   2/2       Running   0          49s
+$ # and finally our mysql database is up and running
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If you go back to your &lt;code&gt;minio server&lt;/code&gt;: &lt;a href=&#34;http://localhost:9090&#34;&gt;http://localhost:9090&lt;/a&gt; and take
+a look at the &lt;code&gt;store0&lt;/code&gt; bucket, you should see all &lt;code&gt;mysql&lt;/code&gt; files mirrored back.&lt;/p&gt;
+
+&lt;h5 id=&#34;a-closer-look-whats-happening&#34;&gt;A closer look whats happening&lt;/h5&gt;
+
+&lt;p&gt;Here you can se that our &lt;code&gt;mysql&lt;/code&gt; example has two &lt;code&gt;init-containers&lt;/code&gt;.
+They are executed in order and the first (&lt;code&gt;setup&lt;/code&gt;) mirrors all files
+to the &lt;code&gt;persistentdata&lt;/code&gt; volume. The second container restores the file
+ownership.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+pod.beta.kubernetes.io/init-containers: &#39;[{
+  &amp;quot;name&amp;quot;: &amp;quot;setup&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;thenatureofsoftware/mc&amp;quot;,
+  &amp;quot;args&amp;quot;: [&amp;quot;mirror&amp;quot;, &amp;quot;minio/store0&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+},
+{
+  &amp;quot;name&amp;quot;: &amp;quot;chown&amp;quot;,
+  &amp;quot;image&amp;quot;: &amp;quot;tobi312/rpi-mysql:5.6&amp;quot;,
+  &amp;quot;command&amp;quot;: [&amp;quot;chown&amp;quot;, &amp;quot;-R&amp;quot;, &amp;quot;mysql:mysql&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+  &amp;quot;volumeMounts&amp;quot;: [{
+    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+  }]
+}]&#39;
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The last pice of the puzzle is the &lt;code&gt;sidecar&lt;/code&gt; container to &lt;code&gt;mysql&lt;/code&gt; that mirrors
+changes back:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;
+- image: thenatureofsoftware/mc-mirror:latest
+        imagePullPolicy: Always
+        name: mc-mirror
+        args:
+        - /var/lib/mysql
+        - minio/store0
+        volumeMounts:
+        - mountPath: &amp;quot;/var/lib/mysql&amp;quot;
+          name: persistentdata
+      restartPolicy: Always
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;to-sum-up&#34;&gt;To sum up&lt;/h4&gt;
+
+&lt;p&gt;The solution has it&amp;rsquo;s pros and cons. The pros are that it uses the nodes
+local disk when using volume type &lt;code&gt;emptyDir&lt;/code&gt;. Once the volume is setup then there
+should be very few surprises. The problem is of course that you need to
+mirror everything back and the size of the local disk.&lt;/p&gt;
+
+&lt;p&gt;There are room for improvements like using the &lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api&#34;&gt;Downward API&lt;/a&gt; for creating buckets.&lt;/p&gt;
+
+&lt;p&gt;Mysql is probably one of the worst examples I&amp;rsquo;ve could have picket. I&amp;rsquo;ll
+try to add some more like &lt;code&gt;zookeeper&lt;/code&gt;, &lt;code&gt;cassandra&lt;/code&gt; and &lt;code&gt;elastic&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h4 id=&#34;links&#34;&gt;Links&lt;/h4&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://minio.io/&#34;&gt;Minio Cloud Storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/&#34;&gt;StatefulSet&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/init-containers/&#34;&gt;Init Containers&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description>
+    </item>
     
     <item>
       <title>Installing Kubernetes on ARM with kubeadm</title>
@@ -2288,189 +2474,6 @@ something you didn&amp;rsquo;t know before. Now I&amp;rsquo;m off to learn some 
 &lt;li&gt;&lt;a href=&#34;https://github.com/kelseyhightower/conf2kube&#34;&gt;https://github.com/kelseyhightower/conf2kube&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://github.com/drone-demos&#34;&gt;https://github.com/drone-demos&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;</description>
-    </item>
-    
-    <item>
-      <title>Gogs and Drone On Kubernetes-ARM - Part 2</title>
-      <link>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/</link>
-      <pubDate>Mon, 08 Feb 2016 09:21:47 +0100</pubDate>
-      
-      <guid>http://larmog.github.io/2016/02/08/gogs-and-drone-on-kubernetes-arm---part-2/</guid>
-      <description>&lt;p&gt;This is the second part in a series of posts describing how I have setup Gogs
-and Drone on
-&lt;a href=&#34;http://larmog.github.io/2016/02/06/kubernetes-on-arm/&#34;&gt;Kubernetes-On-ARM&lt;/a&gt; cluster.
-In &lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Part 1&lt;/a&gt; we
-talked about setting up Gogs.&lt;/p&gt;
-
-&lt;p&gt;In this part I&amp;rsquo;ll explain how to setup &lt;code&gt;service-loadbalancer&lt;/code&gt; to expose services
-outside the cluster.
-&lt;/p&gt;
-
-&lt;p&gt;I&amp;rsquo;m using &lt;a href=&#34;https://github.com/luxas&#34;&gt;Lucas Käldström&lt;/a&gt;:s great
-&lt;a href=&#34;https://github.com/luxas/kubernetes-on-arm&#34;&gt;kubernetes-on-arm&lt;/a&gt; project.
-There&amp;rsquo;s a load-balancer addon based on &lt;a href=&#34;https://github.com/kubernetes/contrib&#34;&gt;kubernetes/contrib/service-loadbalancer&lt;/a&gt;
-that wasn&amp;rsquo;t ready in the &lt;code&gt;0.6.3&lt;/code&gt; release.&lt;/p&gt;
-
-&lt;p&gt;Before we begin you might take a look at
-&lt;a href=&#34;https://github.com/kubernetes/contrib/tree/master/service-loadbalancer&#34;&gt;service-loadbalancer&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;What I did was to build the &lt;code&gt;service-loadbalancer&lt;/code&gt; from the
-&lt;code&gt;kubernetes/contrib master branch&lt;/code&gt;. Once again Lucas have made a great job and
-created a docker file for building the Kubernetes-ARM binaries on x86.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ # Clone the repository
-$ git clone https://github.com/luxas/kubernetes-on-arm
-$ # Build the Docker image
-$ cd kubernetes-on-arm/scripts/build-k8s-on-amd64
-$ docker build -t build-k8s-on-amd64 .
-$ # Create a container
-$ docker run --name=build-k8s-on-amd64 build-k8s-on-amd64 true
-$ # Copy out the binaries from the container
-$ docker cp build-k8s-on-amd64:/output .
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt; binary is located in the &lt;code&gt;output&lt;/code&gt; directory.
-Transfer the file to the nodes that will have the role of load-balancer.
-e.g.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ scp ./output/service-loadbalancer \ xxx.xxx.xxx.xxx:/etc/kubernetes/source/images/kubernetesonarm/_bin/latest
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The &lt;code&gt;service-loadbalancer&lt;/code&gt; uses a template for creating a &lt;code&gt;ha-proxy.cfg&lt;/code&gt;.
-The template I&amp;rsquo;m using can be found here: &lt;a href=&#34;https://goo.gl/TzvKhX&#34;&gt;template.cfg&lt;/a&gt;
-On each node build the &lt;code&gt;kubernetesonarm/loadbalancer&lt;/code&gt; image.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ cd /etc/kubernetes/source/images/kubernetesonarm/loadbalancer
-$ mv template.cfg template.cfg.org
-$ wget wget https://goo.gl/TzvKhX -O template.cfg
-$ ./build.sh
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Phew&amp;hellip; were half way. The Docker image is in place on our nodes. Now we need
-to label them so that the scheduler can place the &lt;code&gt;service-loadbalancer&lt;/code&gt; on the
-right nodes.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;$ kubectl label --overwrite nodes &amp;lt;node name&amp;gt; role=loadbalancer
-$ kubectl get nodes
-NAME           LABELS                                                  STATUS    AGE
-&amp;lt;node name&amp;gt;   kubernetes.io/hostname=&amp;lt;node name&amp;gt;,role=loadbalancer     Ready     2d
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Now it&amp;rsquo;s time to create the &lt;code&gt;loadbalancer&lt;/code&gt;. If you wan&amp;rsquo;t to use &lt;code&gt;https&lt;/code&gt; you need
-to create a &lt;code&gt;secret&lt;/code&gt; and mount the volume in your pod template.
-Here&amp;rsquo;s my &lt;code&gt;loadbalancer-rc.yaml&lt;/code&gt;:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: ReplicationController
-metadata:
-  name: service-loadbalancer
-  namespace: kube-system
-  labels:
-    app: service-loadbalancer
-    version: v1
-spec:
-  replicas: 1
-  selector:
-    app: service-loadbalancer
-    version: v1
-  template:
-    metadata:
-      labels:
-        app: service-loadbalancer
-        version: v1
-    spec:
-      nodeSelector:
-        role: loadbalancer
-      volumes:
-      - name: ssl-volume
-        secret:
-          secretName: kodbasen-ssl-secret
-      containers:
-      - image: kubernetesonarm/loadbalancer
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-            scheme: HTTP
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
-        name: haproxy
-        ports:
-        # All http services
-        - containerPort: 80
-          hostPort: 80
-          protocol: TCP
-        # nginx https
-        - containerPort: 443
-          hostPort: 443
-          protocol: TCP
-        # mysql
-        - containerPort: 3306
-          hostPort: 3306
-          protocol: TCP
-        # haproxy stats
-        - containerPort: 1936
-          hostPort: 1936
-          protocol: TCP
-        # gogs ssh
-        - containerPort: 2222
-          hostPort: 2222
-          protocol: TCP
-        volumeMounts:
-        - name: ssl-volume
-          readOnly: true
-          mountPath: &amp;quot;/ssl&amp;quot;
-        resources: {}
-        args:
-        - --tcp-services=my-gogs-ssh:2222
-        - --ssl-cert=/ssl/server.pem
-        - --ssl-ca-cert=/ssl/ca.crt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;He&amp;rsquo;re you can see that I&amp;rsquo;ve exposed the &lt;code&gt;my-gogs-ssh&lt;/code&gt; as a TCP service.&lt;/p&gt;
-
-&lt;p&gt;Now we&amp;rsquo;re ready to expose our Gogs service to the outside world. We need to
-change our Gogs service from
-&lt;a href=&#34;http://larmog.github.io/2016/02/07/gogs-and-drone-on-kubernetes-arm---part-1/&#34;&gt;Part 1&lt;/a&gt; slightly and add
-some annotations.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    serviceloadbalancer/lb.sslTerm: &amp;quot;true&amp;quot;
-    serviceloadbalancer/lb.host: &amp;quot;gogs.replace.me&amp;quot;
-    serviceloadbalancer/lb.cookie-sticky-session: &amp;quot;true&amp;quot;
-  labels:
-    app: my-gogs-service
-  name: my-gogs-service
-  namespace: default
-spec:
-  ports:
-  - port: 80
-    protocol: TCP
-    targetPort: 3000
-  selector:
-    app: my-gogs
-  sessionAffinity: None
-  type: ClusterIP
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.sslTerm: &amp;quot;true&amp;quot;&lt;/code&gt; annotation says that we wan&amp;rsquo;t to
-use &lt;code&gt;https&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.host: &amp;quot;gogs.replace.me&amp;quot;&lt;/code&gt; is the &lt;code&gt;virtual host&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;serviceloadbalancer/lb.cookie-sticky-session: &amp;quot;true&amp;quot;&lt;/code&gt; enables sticky sessions
-between your pods (&lt;code&gt;replicas &amp;gt; 1&lt;/code&gt;)&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;If everything is working you should be rewarded with a &lt;code&gt;ha-proxy&lt;/code&gt; status page
-where you can monitor your exposed services. Fire up
-&lt;code&gt;http://&amp;lt;loadbalancer ip&amp;gt;:1936/&lt;/code&gt; in your favorite browser and take a look.&lt;/p&gt;
-
-&lt;p&gt;That is all for now. In the next part we will take a look at the &lt;code&gt;CI&lt;/code&gt; tool
-&lt;a href=&#34;https://github.com/drone/drone&#34;&gt;Drone&lt;/a&gt; and how to get it working on our
-&lt;em&gt;Kubernetes-ARM&lt;/em&gt; cluster. Prepare for a journey &lt;em&gt;down the rabbit hole&lt;/em&gt;.&lt;/p&gt;</description>
     </item>
     
   </channel>
