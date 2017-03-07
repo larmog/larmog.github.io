@@ -70,7 +70,7 @@ and copies them using the  &lt;code&gt;mc cp&lt;/code&gt; command back to the se
 &lt;h4 id=&#34;starting-minio-server&#34;&gt;Starting &lt;code&gt;minio server&lt;/code&gt;&lt;/h4&gt;
 
 &lt;p&gt;The &lt;code&gt;accessKey&lt;/code&gt; and &lt;code&gt;secretKey&lt;/code&gt; is only for demo, you should create your own
-config files using &lt;code&gt;kubectl create configmap&lt;/code&gt; and mount it to your container at
+config files using &lt;code&gt;kubectl create secret generic&lt;/code&gt; and mount it to your container at
 &lt;code&gt;/app/config.json&lt;/code&gt;.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;

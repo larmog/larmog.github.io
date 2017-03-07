@@ -130,7 +130,7 @@ and copies them using the  <code>mc cp</code> command back to the server.</p>
 <h4 id="starting-minio-server">Starting <code>minio server</code></h4>
 
 <p>The <code>accessKey</code> and <code>secretKey</code> is only for demo, you should create your own
-config files using <code>kubectl create configmap</code> and mount it to your container at
+config files using <code>kubectl create secret generic</code> and mount it to your container at
 <code>/app/config.json</code>.</p>
 
 <pre><code class="language-shell">
