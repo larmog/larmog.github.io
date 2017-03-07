@@ -44,7 +44,7 @@ If you wan't to try it out your self there's *multiarch* images for `arm` and
 #### Starting `minio server`
 
 The `accessKey` and `secretKey` is only for demo, you should create your own
-config files using `kubectl create configmap` and mount it to your container at
+config files using `kubectl create secret generic` and mount it to your container at
 `/app/config.json`.
 
 ```shell
