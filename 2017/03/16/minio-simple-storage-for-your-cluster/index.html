@@ -76,7 +76,9 @@
             
           
           </p>
-          <p><p><img src="/media/minio-k8s.png" style="float:right;height:150px">
+          <p><p><em>(updated 2017-03-16)</em></p>
+
+<p><img src="/media/minio-k8s.png" style="float:right;height:150px">
 I&rsquo;ve been using different volume types for storage in my <code>kubernetes-on-arm</code>
 cluster. I wrote two posts about it: <a href="/2016/02/22/glusterfs-on-kubernetes-arm/">GlusterFS On Kubernetes ARM</a> and <a href="/2016/05/12/storage-for-your-cluster/">Storage for your cluster</a> a year ago. All solutions adds complexity
 to the cluster, the one that&rsquo;s been easiest to handle is <code>nfs</code>. But <code>nfs</code> isn&rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
@@ -124,8 +126,8 @@ had to create a work around.
 The work around is a simple script that for every <code>#</code> seconds checks for changes
 and copies them using the  <code>mc cp</code> command back to the server.</p>
 
-<p>If you wan&rsquo;t to try it out your self there&rsquo;s <em>multiarch</em> images for <code>arm</code> and
-<code>arm64</code> and a <code>mysql</code> example at <a href="https://github.com/TheNatureOfSoftware/minio-k8s-storage">minio-k8s-storage</a>.</p>
+<p>If you wan&rsquo;t to try it out your self there&rsquo;s <em>multiarch</em> images for <code>arm</code>, <code>arm64</code>
+and <code>amd64</code> and a <code>mysql</code> example at <a href="https://github.com/TheNatureOfSoftware/volumizr">volumizr</a>.</p>
 
 <h4 id="starting-minio-server">Starting <code>minio server</code></h4>
 
@@ -135,7 +137,7 @@ config files using <code>kubectl create secret generic</code> and mount it to yo
 
 <pre><code class="language-shell">
 $ # the minio server expects a persistentVolume of at least 5Gi
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/minio.yml
 service &quot;minio&quot; created
 statefulset &quot;minio&quot; created
 $
@@ -161,7 +163,7 @@ named <code>store0</code>.</p>
 <h4 id="starting-the-mysql-example">Starting the <code>mysql</code> example</h4>
 
 <pre><code class="language-shell">
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/example/mysql-example.yml
 service &quot;mysql&quot; created
 statefulset &quot;mysql&quot; created
 $
@@ -196,15 +198,17 @@ to the <code>persistentdata</code> volume. The second container restores the fil
 ownership.</p>
 
 <pre><code>
-pod.beta.kubernetes.io/init-containers: '[{
-  &quot;name&quot;: &quot;setup&quot;,
-  &quot;image&quot;: &quot;thenatureofsoftware/mc&quot;,
-  &quot;args&quot;: [&quot;mirror&quot;, &quot;minio/store0&quot;, &quot;/var/lib/mysql&quot;],
-  &quot;volumeMounts&quot;: [{
-    &quot;mountPath&quot;: &quot;/var/lib/mysql&quot;,
-    &quot;name&quot;: &quot;persistentdata&quot;
-  }]
-},
+annotations:
+  pod.beta.kubernetes.io/init-containers:
+    '[{
+    &quot;name&quot;: &quot;volumizr-in&quot;,
+    &quot;image&quot;: &quot;thenatureofsoftware/volumizr:latest&quot;,
+    &quot;args&quot;: [&quot;in&quot;, &quot;minio/mysql&quot;, &quot;/var/lib/mysql&quot;],
+    &quot;volumeMounts&quot;: [{
+      &quot;mountPath&quot;: &quot;/var/lib/mysql&quot;,
+      &quot;name&quot;: &quot;persistentdata&quot;
+    }]
+  },
 {
   &quot;name&quot;: &quot;chown&quot;,
   &quot;image&quot;: &quot;tobi312/rpi-mysql:5.6&quot;,
@@ -221,16 +225,16 @@ pod.beta.kubernetes.io/init-containers: '[{
 changes back:</p>
 
 <pre><code>
-- image: thenatureofsoftware/mc-mirror:latest
-        imagePullPolicy: Always
-        name: mc-mirror
-        args:
-        - /var/lib/mysql
-        - minio/store0
-        volumeMounts:
-        - mountPath: &quot;/var/lib/mysql&quot;
-          name: persistentdata
-      restartPolicy: Always
+- image: thenatureofsoftware/volumizr:latest
+  imagePullPolicy: Always
+  name: volumizr-out
+  args:
+  - out
+  - /var/lib/mysql
+  - minio/mysql
+  volumeMounts:
+  - mountPath: &quot;/var/lib/mysql&quot;
+    name: persistentdata
 
 </code></pre>
 
@@ -241,20 +245,15 @@ local disk when using volume type <code>emptyDir</code>. Once the volume is setu
 should be very few surprises. The problem is of course that you need to
 mirror everything back and the size of the local disk.</p>
 
-<p>There are room for improvements like using the <a href="https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api">Downward API</a> for creating buckets.</p>
-
-<p>Mysql is probably one of the worst examples I&rsquo;ve could have picket. I&rsquo;ll
-try to add some more like <code>zookeeper</code>, <code>cassandra</code> and <code>elastic</code>.</p>
-
 <h4 id="links">Links</h4>
 
 <ul>
 <li><a href="https://minio.io/">Minio Cloud Storage</a></li>
-<li><a href="https://github.com/TheNatureOfSoftware/minio-k8s-storage">minio-k8s-storage</a></li>
+<li><a href="https://github.com/TheNatureOfSoftware/volumizr">volumizr</a></li>
 <li><a href="https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/">StatefulSet</a></li>
 <li><a href="https://kubernetes.io/docs/concepts/abstractions/init-containers/">Init Containers</a></li>
 </ul></p>
-          <p>7 Mar 2017
+          <p>16 Mar 2017
             
               
                 <a href="http://larmog.github.io//tags/development/">#Development</a>
@@ -273,37 +272,37 @@ try to add some more like <code>zookeeper</code>, <code>cassandra</code> and <co
 
 
 
-<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&text=Minio%2c%20simple%20storage%20for%20your%20cluster&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
+<a href="http://twitter.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f&text=Minio%2c%20simple%20storage%20for%20your%20cluster&via=larmog" target="_blank" class="waves-effect waves-light btn twitter">
     <i class="fa fa-twitter"></i>
 </a>
 
 
-<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn google-plus">
+<a href="https://plus.google.com/share?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn google-plus">
     <i class="fa fa-google-plus"></i>
 </a>
 
 
-<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn facebook">
+<a href="http://www.facebook.com/sharer/sharer.php?u=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn facebook">
     <i class="fa fa-facebook"></i>
 </a>
 
 
-<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn stumbleupon">
+<a href="http://www.stumbleupon.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn stumbleupon">
     <i class="fa fa-stumbleupon"></i>
 </a>
 
 
-<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn reddit">
+<a href="http://reddit.com/submit?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f&title=Minio%2c%20simple%20storage%20for%20your%20cluster" target="_blank" class="waves-effect waves-light btn reddit">
     <i class="fa fa-reddit"></i>
 </a>
 
 
-<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f&mini=true&title=Minio%2c%20simple%20storage%20for%20your%20cluster&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
+<a href="http://www.linkedin.com/shareArticle?url=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f&mini=true&title=Minio%2c%20simple%20storage%20for%20your%20cluster&source=kodbasen" target="_blank" class="waves-effect waves-light btn linkedin">
     <i class="fa fa-linkedin"></i>
 </a>
 
 
-<a href="mailto:?subject=Minio%2c%20simple%20storage%20for%20your%20cluster&body=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f07%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn email">
+<a href="mailto:?subject=Minio%2c%20simple%20storage%20for%20your%20cluster&body=http%3a%2f%2flarmog.github.io%2f2017%2f03%2f16%2fminio-simple-storage-for-your-cluster%2f" target="_blank" class="waves-effect waves-light btn email">
     <i class="fa fa-envelope"></i>
 </a>
 </div>

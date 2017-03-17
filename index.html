@@ -66,7 +66,7 @@
   <div class="col m4 s12">
     <div class="card">
       <div class="card-content">
-        <h5><a href="http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/">Minio, simple storage for your cluster</a></h5>
+        <h5><a href="http://larmog.github.io/2017/03/16/minio-simple-storage-for-your-cluster/">Minio, simple storage for your cluster</a></h5>
         <p>
           
           
@@ -80,7 +80,9 @@
           
           
         </p>
-        <p><p><img src="/media/minio-k8s.png" style="float:right;height:150px">
+        <p><p><em>(updated 2017-03-16)</em></p>
+
+<p><img src="/media/minio-k8s.png" style="float:right;height:150px">
 I&rsquo;ve been using different volume types for storage in my <code>kubernetes-on-arm</code>
 cluster. I wrote two posts about it: <a href="/2016/02/22/glusterfs-on-kubernetes-arm/">GlusterFS On Kubernetes ARM</a> and <a href="/2016/05/12/storage-for-your-cluster/">Storage for your cluster</a> a year ago. All solutions adds complexity
 to the cluster, the one that&rsquo;s been easiest to handle is <code>nfs</code>. But <code>nfs</code> isn&rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
@@ -89,7 +91,7 @@ directory from the host in to your Pod. But when the Pod goes away, so does your
 volume, leaving you with nothing.
 </p></p>
       <p>
-      7 Mar 2017
+      16 Mar 2017
       
         
           <a href="http://larmog.github.io//tags/development/">#Development</a>
@@ -106,7 +108,7 @@ volume, leaving you with nothing.
       </p>
       </div>
       <div style="text-align: right;">
-        <a style="text-transform: none;" class="btn-flat blue-text text-lighten-2" href="http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/">
+        <a style="text-transform: none;" class="btn-flat blue-text text-lighten-2" href="http://larmog.github.io/2017/03/16/minio-simple-storage-for-your-cluster/">
           Read more <i class="mdi-navigation-arrow-forward"></i>
         </a>
       </div>

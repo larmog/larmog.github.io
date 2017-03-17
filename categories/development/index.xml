@@ -11,11 +11,13 @@
     
     <item>
       <title>Minio, simple storage for your cluster</title>
-      <link>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</link>
-      <pubDate>Tue, 07 Mar 2017 11:08:59 +0100</pubDate>
+      <link>http://larmog.github.io/2017/03/16/minio-simple-storage-for-your-cluster/</link>
+      <pubDate>Thu, 16 Mar 2017 11:08:59 +0100</pubDate>
       
-      <guid>http://larmog.github.io/2017/03/07/minio-simple-storage-for-your-cluster/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://larmog.github.io/media/minio-k8s.png&#34; style=&#34;float:right;height:150px&#34;&gt;
+      <guid>http://larmog.github.io/2017/03/16/minio-simple-storage-for-your-cluster/</guid>
+      <description>&lt;p&gt;&lt;em&gt;(updated 2017-03-16)&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://larmog.github.io/media/minio-k8s.png&#34; style=&#34;float:right;height:150px&#34;&gt;
 I&amp;rsquo;ve been using different volume types for storage in my &lt;code&gt;kubernetes-on-arm&lt;/code&gt;
 cluster. I wrote two posts about it: &lt;a href=&#34;http://larmog.github.io/2016/02/22/glusterfs-on-kubernetes-arm/&#34;&gt;GlusterFS On Kubernetes ARM&lt;/a&gt; and &lt;a href=&#34;http://larmog.github.io/2016/05/12/storage-for-your-cluster/&#34;&gt;Storage for your cluster&lt;/a&gt; a year ago. All solutions adds complexity
 to the cluster, the one that&amp;rsquo;s been easiest to handle is &lt;code&gt;nfs&lt;/code&gt;. But &lt;code&gt;nfs&lt;/code&gt; isn&amp;rsquo;t transparent enough. I always seems to end up in strange corner cases where it’s
@@ -63,8 +65,8 @@ had to create a work around.
 The work around is a simple script that for every &lt;code&gt;#&lt;/code&gt; seconds checks for changes
 and copies them using the  &lt;code&gt;mc cp&lt;/code&gt; command back to the server.&lt;/p&gt;
 
-&lt;p&gt;If you wan&amp;rsquo;t to try it out your self there&amp;rsquo;s &lt;em&gt;multiarch&lt;/em&gt; images for &lt;code&gt;arm&lt;/code&gt; and
-&lt;code&gt;arm64&lt;/code&gt; and a &lt;code&gt;mysql&lt;/code&gt; example at &lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If you wan&amp;rsquo;t to try it out your self there&amp;rsquo;s &lt;em&gt;multiarch&lt;/em&gt; images for &lt;code&gt;arm&lt;/code&gt;, &lt;code&gt;arm64&lt;/code&gt;
+and &lt;code&gt;amd64&lt;/code&gt; and a &lt;code&gt;mysql&lt;/code&gt; example at &lt;a href=&#34;https://github.com/TheNatureOfSoftware/volumizr&#34;&gt;volumizr&lt;/a&gt;.&lt;/p&gt;
 
 &lt;h4 id=&#34;starting-minio-server&#34;&gt;Starting &lt;code&gt;minio server&lt;/code&gt;&lt;/h4&gt;
 
@@ -74,7 +76,7 @@ config files using &lt;code&gt;kubectl create secret generic&lt;/code&gt; and mo
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
 $ # the minio server expects a persistentVolume of at least 5Gi
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/minio.yml
 service &amp;quot;minio&amp;quot; created
 statefulset &amp;quot;minio&amp;quot; created
 $
@@ -100,7 +102,7 @@ named &lt;code&gt;store0&lt;/code&gt;.&lt;/p&gt;
 &lt;h4 id=&#34;starting-the-mysql-example&#34;&gt;Starting the &lt;code&gt;mysql&lt;/code&gt; example&lt;/h4&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-shell&#34;&gt;
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/example/mysql-example.yml
 service &amp;quot;mysql&amp;quot; created
 statefulset &amp;quot;mysql&amp;quot; created
 $
@@ -135,15 +137,17 @@ to the &lt;code&gt;persistentdata&lt;/code&gt; volume. The second container rest
 ownership.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;
-pod.beta.kubernetes.io/init-containers: &#39;[{
-  &amp;quot;name&amp;quot;: &amp;quot;setup&amp;quot;,
-  &amp;quot;image&amp;quot;: &amp;quot;thenatureofsoftware/mc&amp;quot;,
-  &amp;quot;args&amp;quot;: [&amp;quot;mirror&amp;quot;, &amp;quot;minio/store0&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
-  &amp;quot;volumeMounts&amp;quot;: [{
-    &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
-    &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
-  }]
-},
+annotations:
+  pod.beta.kubernetes.io/init-containers:
+    &#39;[{
+    &amp;quot;name&amp;quot;: &amp;quot;volumizr-in&amp;quot;,
+    &amp;quot;image&amp;quot;: &amp;quot;thenatureofsoftware/volumizr:latest&amp;quot;,
+    &amp;quot;args&amp;quot;: [&amp;quot;in&amp;quot;, &amp;quot;minio/mysql&amp;quot;, &amp;quot;/var/lib/mysql&amp;quot;],
+    &amp;quot;volumeMounts&amp;quot;: [{
+      &amp;quot;mountPath&amp;quot;: &amp;quot;/var/lib/mysql&amp;quot;,
+      &amp;quot;name&amp;quot;: &amp;quot;persistentdata&amp;quot;
+    }]
+  },
 {
   &amp;quot;name&amp;quot;: &amp;quot;chown&amp;quot;,
   &amp;quot;image&amp;quot;: &amp;quot;tobi312/rpi-mysql:5.6&amp;quot;,
@@ -160,16 +164,16 @@ pod.beta.kubernetes.io/init-containers: &#39;[{
 changes back:&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;
-- image: thenatureofsoftware/mc-mirror:latest
-        imagePullPolicy: Always
-        name: mc-mirror
-        args:
-        - /var/lib/mysql
-        - minio/store0
-        volumeMounts:
-        - mountPath: &amp;quot;/var/lib/mysql&amp;quot;
-          name: persistentdata
-      restartPolicy: Always
+- image: thenatureofsoftware/volumizr:latest
+  imagePullPolicy: Always
+  name: volumizr-out
+  args:
+  - out
+  - /var/lib/mysql
+  - minio/mysql
+  volumeMounts:
+  - mountPath: &amp;quot;/var/lib/mysql&amp;quot;
+    name: persistentdata
 
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -180,16 +184,11 @@ local disk when using volume type &lt;code&gt;emptyDir&lt;/code&gt;. Once the vo
 should be very few surprises. The problem is of course that you need to
 mirror everything back and the size of the local disk.&lt;/p&gt;
 
-&lt;p&gt;There are room for improvements like using the &lt;a href=&#34;https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api&#34;&gt;Downward API&lt;/a&gt; for creating buckets.&lt;/p&gt;
-
-&lt;p&gt;Mysql is probably one of the worst examples I&amp;rsquo;ve could have picket. I&amp;rsquo;ll
-try to add some more like &lt;code&gt;zookeeper&lt;/code&gt;, &lt;code&gt;cassandra&lt;/code&gt; and &lt;code&gt;elastic&lt;/code&gt;.&lt;/p&gt;
-
 &lt;h4 id=&#34;links&#34;&gt;Links&lt;/h4&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://minio.io/&#34;&gt;Minio Cloud Storage&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://github.com/TheNatureOfSoftware/minio-k8s-storage&#34;&gt;minio-k8s-storage&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/TheNatureOfSoftware/volumizr&#34;&gt;volumizr&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/&#34;&gt;StatefulSet&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/abstractions/init-containers/&#34;&gt;Init Containers&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;</description>
