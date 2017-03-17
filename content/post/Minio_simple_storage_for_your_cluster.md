@@ -1,11 +1,13 @@
 +++
-date = "2017-03-07T11:08:59+01:00"
+date = "2017-03-16T11:08:59+01:00"
 title = "Minio, simple storage for your cluster"
 draft = false
 author = "Lars Mogren"
 tags = [ "Development", "Docker", "Kubernetes", "Minio", "Storage"]
 categories = [ "Development", "Kubernetes", "Docker", "Cloud" ]
 +++
+
+*(updated 2017-03-16)*
 
 <img src="/media/minio-k8s.png" style="float:right;height:150px">
 I've been using different volume types for storage in my `kubernetes-on-arm`
@@ -38,8 +40,8 @@ had to create a work around.
 The work around is a simple script that for every `#` seconds checks for changes
 and copies them using the  `mc cp` command back to the server.
 
-If you wan't to try it out your self there's *multiarch* images for `arm` and
-`arm64` and a `mysql` example at [minio-k8s-storage](https://github.com/TheNatureOfSoftware/minio-k8s-storage).
+If you wan't to try it out your self there's *multiarch* images for `arm`, `arm64`
+and `amd64` and a `mysql` example at [volumizr](https://github.com/TheNatureOfSoftware/volumizr).
 
 #### Starting `minio server`
 
@@ -50,7 +52,7 @@ config files using `kubectl create secret generic` and mount it to your containe
 ```shell
 
 $ # the minio server expects a persistentVolume of at least 5Gi
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/minio.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/minio.yml
 service "minio" created
 statefulset "minio" created
 $
@@ -78,7 +80,7 @@ named `store0`.
 
 ```shell
 
-$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/minio-k8s-storage/master/mysql-example.yml
+$ kubectl create -f https://raw.githubusercontent.com/TheNatureOfSoftware/volumizr/master/example/mysql-example.yml
 service "mysql" created
 statefulset "mysql" created
 $
@@ -114,15 +116,17 @@ ownership.
 
 ```
 
-pod.beta.kubernetes.io/init-containers: '[{
-  "name": "setup",
-  "image": "thenatureofsoftware/mc",
-  "args": ["mirror", "minio/store0", "/var/lib/mysql"],
-  "volumeMounts": [{
-    "mountPath": "/var/lib/mysql",
-    "name": "persistentdata"
-  }]
-},
+annotations:
+  pod.beta.kubernetes.io/init-containers:
+    '[{
+    "name": "volumizr-in",
+    "image": "thenatureofsoftware/volumizr:latest",
+    "args": ["in", "minio/mysql", "/var/lib/mysql"],
+    "volumeMounts": [{
+      "mountPath": "/var/lib/mysql",
+      "name": "persistentdata"
+    }]
+  },
 {
   "name": "chown",
   "image": "tobi312/rpi-mysql:5.6",
@@ -140,16 +144,16 @@ changes back:
 
 ```
 
-- image: thenatureofsoftware/mc-mirror:latest
-        imagePullPolicy: Always
-        name: mc-mirror
-        args:
-        - /var/lib/mysql
-        - minio/store0
-        volumeMounts:
-        - mountPath: "/var/lib/mysql"
-          name: persistentdata
-      restartPolicy: Always
+- image: thenatureofsoftware/volumizr:latest
+  imagePullPolicy: Always
+  name: volumizr-out
+  args:
+  - out
+  - /var/lib/mysql
+  - minio/mysql
+  volumeMounts:
+  - mountPath: "/var/lib/mysql"
+    name: persistentdata
 
 ```
 
@@ -160,14 +164,9 @@ local disk when using volume type `emptyDir`. Once the volume is setup then ther
 should be very few surprises. The problem is of course that you need to
 mirror everything back and the size of the local disk.
 
-There are room for improvements like using the [Downward API](https://kubernetes.io/docs/tasks/configure-pod-container/downward-api-volume-expose-pod-information/#the-downward-api) for creating buckets.
-
-Mysql is probably one of the worst examples I've could have picket. I'll
-try to add some more like `zookeeper`, `cassandra` and `elastic`.
-
 #### Links
 
 * [Minio Cloud Storage](https://minio.io/)
-* [minio-k8s-storage](https://github.com/TheNatureOfSoftware/minio-k8s-storage)
+* [volumizr](https://github.com/TheNatureOfSoftware/volumizr)
 * [StatefulSet](https://kubernetes.io/docs/concepts/abstractions/controllers/statefulsets/)
 * [Init Containers](https://kubernetes.io/docs/concepts/abstractions/init-containers/)
